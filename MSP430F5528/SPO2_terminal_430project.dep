@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>157794393</fileChecksum>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\AFE44x0_MSP430F5528_APP\AFE44x0.c</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_FLASH.h</file>
+      <file>$PROJ_DIR$\AFE44x0_MSP430F5528_APP\AFE44x0.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_FLASH.c</file>
+      <file>$PROJ_DIR$\types.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\hal_macros.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMAP.c</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMAP.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMM.c</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMM.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_TLV.c</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_TLV.h</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_UCS.c</file>
+      <file>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_UCS.h</file>
+      <file>$PROJ_DIR$\AFE44x0_main.c</file>
+      <file>$PROJ_DIR$\AFE44x0_main.h</file>
+      <file>$PROJ_DIR$\Spo2_Functions.h</file>
+      <file>$PROJ_DIR$\Spo2_Functions.c</file>
+      <file>$PROJ_DIR$\OLED.c</file>
+      <file>$PROJ_DIR$\OLED_FRONT.h</file>
+      <file>$PROJ_DIR$\Power_Mon.c</file>
+      <file>E:\&#x8840;&#x6C27;&#x5B9e;&#x73B0;\&#x8840;&#x6C27;&#x4eA7;&#x54C1;&#x7eC8;&#x7AeF;&#x5e03;&#x5C40;\Source_project\MSP430F5528\AFE44x0_main.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_PMAP.r43</file>
+      <file>E:\&#x8840;&#x6C27;&#x5B9e;&#x73B0;\&#x8840;&#x6C27;&#x4eA7;&#x54C1;&#x7eC8;&#x7AeF;&#x5e03;&#x5C40;\Source_project\MSP430F5528\AFE44x0_MSP430F5528_APP\AFE44x0.h</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430xsfn.r43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430f5528.h</file>
+      <file>$TOOLKIT_DIR$\config\multiplier32_loc2.xcl</file>
+      <file>$PROJ_DIR$\Debug\Obj\Power_Mon.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\AFE44x0_main.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\SPO2_terminal_430project.pbd</file>
+      <file>$PROJ_DIR$\Debug\Exe\SPO2_terminal_430project.d43</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_TLV.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_PMM.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_TLV.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdlib.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_UCS.r43</file>
+      <file>$PROJ_DIR$\AFE44x0_MSP430F5528_APP\types.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Spo2_Functions.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_PMM.r43</file>
+      <file>$TOOLKIT_DIR$\inc\in430.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Power_Mon.r43</file>
+      <file>$PROJ_DIR$\Debug\Exe\SPO2_terminal_430project.ulp</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ymath.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xtgmath.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\AFE44x0.pbi</file>
+      <file>$TOOLKIT_DIR$\config\lnk430F5528.xcl</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_FLASH.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_PMAP.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430xsfn.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_FLASH.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\HAL_UCS.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ysizet.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\math.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\OLED.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\string.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\AFE44x0.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\OLED.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Spo2_Functions.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\AFE44x0_main.r43</file>
+    </outputs>
+    <file>
+      <name>$PROJ_DIR$\AFE44x0_MSP430F5528_APP\AFE44x0.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 49</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 61</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 38 21 2 26 43 65</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 38 21 2 26 43 65</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_FLASH.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 55</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 51</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24 26 43 65 1 39 44 63 41 54 33 53 62</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 24 26 43 65 1 39 44 63 41 54 33 53 62</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMAP.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 52</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 22</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24 26 43 65 7 39 44 63 41 54 33 53 62</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 24 26 43 65 7 39 44 63 41 54 33 53 62</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_PMM.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 34</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 42</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24 26 43 65 9 39 44 63 41 54 33 53 62 5</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 24 26 43 65 9 39 44 63 41 54 33 53 62 5</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_TLV.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 35</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 32</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24 26 43 65 11 39 44 63 41 54 33 53 62</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 24 26 43 65 11 39 44 63 41 54 33 53 62</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_UCS.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 56</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 37</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 24 26 43 65 13 39 44 63 41 54 33 53 62 5</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 24 26 43 65 13 39 44 63 41 54 33 53 62 5</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\AFE44x0_main.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 29</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 67</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 65 60 44 63 41 54 33 53 62 57 36 58 47 48 4 13 39 5 9 23 15 26 43 16</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 65 60 44 63 41 54 33 53 62 57 36 58 47 48 13 39 5 9 23 15 26 43 16</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Spo2_Functions.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 66</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 40</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 26 43 65</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 26 43 65</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\OLED.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 64</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 59</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 4 15 23 26 43 65 19</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 15 23 26 43 65 19</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Power_Mon.c</name>
+      <outputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 28</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 45</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>BICOMP</name>
+          <file> 4 15 2 26 43 65</file>
+        </tool>
+        <tool>
+          <name>ICC430</name>
+          <file> 4 15 2 26 43 65</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 31</file>
+        </tool>
+        <tool>
+          <name>ULP430</name>
+          <file> 46</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\SPO2_terminal_430project.d43</name>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 50 27 61 67 51 22 42 32 37 59 45 40 25</file>
+        </tool>
+      </inputs>
+    </file>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <outputs/>
+    <forcedrebuild>
+      <name>[MULTI_TOOL]</name>
+      <tool>XLINK</tool>
+    </forcedrebuild>
+  </configuration>
+</project>
+
+
