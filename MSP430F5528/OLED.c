@@ -6,7 +6,7 @@
 #include "AFE44x0.h"
 #include "msp430f5528.h"
 #include "OLED_FRONT.h"
-
+#include "hal_type.h"
 
 /**********************************************************************************************************
 * Set_UCB1_SPI													                                          *
@@ -677,7 +677,37 @@ void OLED_ShowHeartSymbol(UCHAR x,UCHAR y,UCHAR mode,UCHAR HeartType)
 }
 
 
-
+/***************************************************************************************************
+ * @fn      HalOledShowPowerSymbol
+ *
+ * @brief   显示电量符号
+ *
+ * @param   
+ *
+ * @return  none
+ ***************************************************************************************************/
+void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num)
+{
+     uint8 temp,t,t1;
+     uint8 y0=y;
+     for(t=0;t<48;t++)
+     {
+       temp = oled_power_symbol[power_num][t]; //oled_power_symbol图标 power_num越小电量越低，10为最大100%,0最小0%
+       for(t1=0;t1<8;t1++)
+       {
+         if(temp&0x80)OLED_DrawPoint(x,y,mode);
+         else OLED_DrawPoint(x,y,!mode);
+         temp<<=1;
+         y++;
+         if((y-y0)==12)
+         {
+           y=y0;
+           x++;
+           break;
+         }
+       }  	
+     } 
+}
 
 
 

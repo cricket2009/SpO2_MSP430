@@ -31,7 +31,8 @@
 
 
 #include "Spo2_Functions.h"   
-      
+
+#include "hal_battery_monitor.h"
 //==============================================================================
 
 #define SYS_CLK 16000000 //15597800    // 16Mhz
@@ -251,6 +252,7 @@ void main (void)
     AFE44xx_PowerOff();       //关闭测量
     oledinit();               // Initialize OLED
     Init_KEY_Interrupt();
+    HalBattMonInit();   //Initialize Battery monitor
     //首页面显示
     OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");
@@ -259,8 +261,6 @@ void main (void)
     
     OLED_Refresh_Gram();
     delay(500000);  
-    
-    
     //Init_TimerA1();
     //开启全局总中断
     __enable_interrupt();            //Enable interrupts globally
@@ -363,10 +363,10 @@ void main (void)
               if(HR_OLED_flag)
               { 
 ////////////////////////////////////////////////////////             
-              if(HR < 100)
-                OLED_ShowNum(HR_Show2Num_Start_X,HR_Show2Num_Start_Y,HR,2,32);              
-              else
-                OLED_ShowNum(HR_Show3Num_Start_X ,HR_Show3Num_Start_Y,HR,3,32);
+                if(HR < 100)
+                  OLED_ShowNum(HR_Show2Num_Start_X,HR_Show2Num_Start_Y,HR,2,32);              
+                else
+                  OLED_ShowNum(HR_Show3Num_Start_X ,HR_Show3Num_Start_Y,HR,3,32);
 /////////////////////////////////////////////////////////
               }//if(HR_OLED_flag)
               else
@@ -425,6 +425,9 @@ void Show_Wait_Symbol(void)
     OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X,HR_Wait_Symbol_Start_Y,1);
     OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+16,HR_Wait_Symbol_Start_Y,1);
     OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+32,HR_Wait_Symbol_Start_Y,1);
+    
+    // 显示电量
+    HalShowBattVol(BATTERY_MEASURE_SHOW);
 }
 /*  
  * ======== Init_Ports ========
@@ -498,7 +501,7 @@ __interrupt void TIMER1_A0_ISR (void)
 }
 
 
-// Port 2 interrupt service routine
+// Port 2 interrupt service routine 采样频率为80Hz，也就是每1/80s进入一次中断
 #pragma vector=PORT2_VECTOR  //DRDY interrupt
 __interrupt void Port_2(void)
 {
