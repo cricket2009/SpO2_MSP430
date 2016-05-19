@@ -29,8 +29,4 @@ float Moving_Average_float(float PPG_rawdata,float MAF_data,float *p,int MA_NN);
 unsigned long dc_offset_Led1 = 0;
 unsigned long dc_offset_Led2 = 0;
 
-
-
-
-
 #endif

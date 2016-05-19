@@ -1,9 +1,9 @@
 /**************************************************************************************************
-  Filename:       hal_battery_monitor.h
-  Revised:        $Date: 2016-04-04 21:54:16 +0800 (Mon, 4 Apr 2016) $
+  Filename:       hal_spi_user.h
+  Revised:        $Date: 2016-04-14 17:21:16 +0800 (Thus, 14 Apr 2016) $
   Revision:       $Revision: 1 $
 
-  Description:    This file contains the interface to the battery measurement.
+  Description:    This file contains the interface to Spi Service.
 
 
   Copyright 2016 Bupt. All rights reserved.
@@ -35,10 +35,11 @@
 
   Should you have any questions regarding your right to use this Software,
   contact kylinnevercry@gami.com. 
+  SPI µ×²ãÇý¶¯
 **************************************************************************************************/
 
-#ifndef HAL_BATTERY_MONITOR_H
-#define HAL_BATTERY_MONITOR_H
+#ifndef HAL_SPIU_H
+#define HAL_SPIU_H
 
 #ifdef __cplusplus
 extern "C"
@@ -49,43 +50,46 @@ extern "C"
  *                                             INCLUDES
  **************************************************************************************************/
 #include "hal_type.h"
-  
+
+/***************************************************************************************************
+ *                                              TYPEDEFS
+ ***************************************************************************************************/
+
+
 /**************************************************************************************************
- * MACROS
+ *                                              MACROS
  **************************************************************************************************/
 
   
 /**************************************************************************************************
  *                                            CONSTANTS
  **************************************************************************************************/
-#define BATTERY_MEASURE_SHOW        0
-#define BATTERY_NO_MEASURE_SHOW     1
- 
-#define BATTER_CYCLE_X  66
-#define BATTER_CYCLE_Y  0
+
+  
 /**************************************************************************************************
  *                                             FUNCTIONS - API
  **************************************************************************************************/
 
 /*
- * Initialize Battery Monitor.
+ * Initialize SPI UART0.
  */
-extern void HalBattMonInit(void);
+extern void SPI1_Config_Init(void);
 
 /*
- * Get the Battery voltage.
+ * Write/read a Byte.
  */
-extern float HalGetBattVol(void);
+extern uint8 SPI1_ReadWriteByte(uint8 TxData);
 
 /*
- * Show the Battery voltage on oled.
+ * Set SPI baud 115200.
  */
-extern uint8 HalShowBattVol(uint8 fThreshold);
+extern void SPI1_SetSpeed_Low(void);
 
+/*
+ * Set SPI baud 4M.
+ */
+extern void SPI1_SetSpeed_High(void);
 
-extern void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num);
-
-extern void OLED_ShowString(UCHAR x,UCHAR y,UCHAR size,const UCHAR *p);
 #ifdef __cplusplus
 }
 #endif  

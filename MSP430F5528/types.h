@@ -54,25 +54,25 @@ extern "C"
 /*----------------------------------------------------------------------------+
  | Type Definition & Macro                                                     |
  +----------------------------------------------------------------------------*/
-typedef char CHAR;
-typedef unsigned char UCHAR;
-typedef int INT;
-typedef unsigned int UINT;
-typedef short SHORT;
-typedef unsigned short USHORT;
-typedef long LONG;
-typedef unsigned long ULONG;
-typedef void VOID;
-typedef unsigned long HANDLE;
-typedef char *          PSTR;
-typedef int BOOL;
-typedef double DOUBLE;
-typedef unsigned char BYTE;
-typedef unsigned char*  PBYTE;
-typedef unsigned int WORD;
-typedef unsigned long DWORD;
-typedef unsigned long*  PDWORD;
+/* These types must be 16-bit, 32-bit or larger integer */
+typedef int		INT;
+typedef unsigned int	UINT;
 
+/* These types must be 8-bit integer */
+typedef char		CHAR;
+typedef unsigned char	UCHAR;
+typedef unsigned char	BYTE;
+
+/* These types must be 16-bit integer */
+typedef short			SHORT;
+typedef unsigned short	USHORT;
+typedef unsigned short	WORD;
+typedef unsigned short	WCHAR;
+
+/* These types must be 32-bit integer */
+typedef long		LONG;
+typedef unsigned long	ULONG;
+typedef unsigned long	DWORD;
 #define SUCCESS 0
 #define FAILURE 1
 #define VOID void

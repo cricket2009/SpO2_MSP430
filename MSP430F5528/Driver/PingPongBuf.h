@@ -1,9 +1,9 @@
 /**************************************************************************************************
-  Filename:       hal_battery_monitor.h
-  Revised:        $Date: 2016-04-04 21:54:16 +0800 (Mon, 4 Apr 2016) $
+  Filename:       pingPongBuf.h
+  Revised:        $Date: 2016-04-06 15:41:16 +0800 (Wen, 6 Apr 2016) $
   Revision:       $Revision: 1 $
 
-  Description:    This file contains the interface to the battery measurement.
+  Description:    This file contains the interface to the pingPong buff.
 
 
   Copyright 2016 Bupt. All rights reserved.
@@ -35,10 +35,13 @@
 
   Should you have any questions regarding your right to use this Software,
   contact kylinnevercry@gami.com. 
+
+  该文件提供Ping Pong Buf 功能的接口API函数
+  供SD卡驱动和ECG采集驱动使用
 **************************************************************************************************/
 
-#ifndef HAL_BATTERY_MONITOR_H
-#define HAL_BATTERY_MONITOR_H
+#ifndef PING_PONG_BUFF_H
+#define PING_PONG_BUFF_H
 
 #ifdef __cplusplus
 extern "C"
@@ -49,7 +52,7 @@ extern "C"
  *                                             INCLUDES
  **************************************************************************************************/
 #include "hal_type.h"
-  
+
 /**************************************************************************************************
  * MACROS
  **************************************************************************************************/
@@ -58,34 +61,63 @@ extern "C"
 /**************************************************************************************************
  *                                            CONSTANTS
  **************************************************************************************************/
-#define BATTERY_MEASURE_SHOW        0
-#define BATTERY_NO_MEASURE_SHOW     1
- 
-#define BATTER_CYCLE_X  66
-#define BATTER_CYCLE_Y  0
+
+  
+/***************************************************************************************************
+ *                                             TYPEDEFS
+ ***************************************************************************************************/
+typedef enum
+{
+  PingPongBuf_WRITE_SUCCESS,
+  PingPongBuf_WRITE_SWITCH, // write successfully and switch ping pong buff
+  PingPongBuf_WRITE_FAIL,
+  PingPongBuf_READ_SUCCESS,
+  PingPongBuf_READ_FAIL
+} BufOpStatus_t;
+
+typedef struct
+{
+  uint8  active_buf_flag; // only last bit is valid
+  uint16 write_count;     // 已经写入到buff的数据量
+  uint16 buf_size;        // buff的大小，用户定义
+  uint16 *pBuf_ping;
+  uint16 *pBuf_pong;
+} PingPongBuf_t;
+
+
+/* for send to SD size --- 128 uint32 = 512Byte 采64次*1/80 = 0.8s*/
+#define BUFFER_WRITE_SIZE       128
 /**************************************************************************************************
  *                                             FUNCTIONS - API
  **************************************************************************************************/
 
 /*
- * Initialize Battery Monitor.
+ * Initialize PingPong buff.
  */
-extern void HalBattMonInit(void);
+extern PingPongBuf_t *PingPongBufInit(uint16 pingPongBufSize);
 
 /*
- * Get the Battery voltage.
+ * Reset PingPong buff.Just reset active_buf_flag and write_count
+ * not free the mem
  */
-extern float HalGetBattVol(void);
+extern void PingPongBufReset(PingPongBuf_t *pingPongBuf);
 
 /*
- * Show the Battery voltage on oled.
+ * Write one data into the active buffer.
  */
-extern uint8 HalShowBattVol(uint8 fThreshold);
+extern BufOpStatus_t PingPongBufWrite(PingPongBuf_t *pingPongBuf,uint16 writeData);
 
+/*
+ * Read all data from inactive buffer.
+ */
+extern BufOpStatus_t PingPongBufRead(PingPongBuf_t *pingPongBuf,
+                                     uint16 **dataBuf);
 
-extern void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num);
+/*
+ * Free PingPong buff memory.
+ */
+extern void PingPongBufFree(PingPongBuf_t *pingPongBuf);
 
-extern void OLED_ShowString(UCHAR x,UCHAR y,UCHAR size,const UCHAR *p);
 #ifdef __cplusplus
 }
 #endif  

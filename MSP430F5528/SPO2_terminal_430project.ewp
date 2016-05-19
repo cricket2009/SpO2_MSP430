@@ -101,11 +101,11 @@
         </option>
         <option>
           <name>GStackHeapOverride</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>GStackSize2</name>
-          <state>160</state>
+          <state>250</state>
         </option>
         <option>
           <name>GHeapSize2</name>
@@ -273,7 +273,7 @@
         </option>
         <option>
           <name>CCEnableRemarks</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CCDiagSuppress</name>
@@ -397,6 +397,8 @@
           <state>$PROJ_DIR$\F5xx_F6xx_Core_Lib</state>
           <state>$PROJ_DIR$\Driver</state>
           <state>$PROJ_DIR$\AFE44x0_MSP430F5528_APP</state>
+          <state>$PROJ_DIR$\Driver\FATFS\exfuns</state>
+          <state>$PROJ_DIR$\Driver\FATFS\src</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -2277,7 +2279,31 @@
       <name>$PROJ_DIR$\Driver\hal_battery_monitor.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\Driver\hal_SDcard.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_SDcard.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_spi_user.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_spi_user.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\Driver\hal_type.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_uart_cc2530.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_uart_cc2530.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\PingPongBuf.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\PingPongBuf.h</name>
     </file>
   </group>
   <group>
@@ -2314,6 +2340,36 @@
     </file>
     <file>
       <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_UCS.h</name>
+    </file>
+  </group>
+  <group>
+    <name>FATFS</name>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\option\ccsbcs.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\diskio.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\diskio.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\exfuns\exfuns.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\exfuns\exfuns.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ff.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ff.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ffconf.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\integer.h</name>
     </file>
   </group>
   <file>

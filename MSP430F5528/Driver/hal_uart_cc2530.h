@@ -1,9 +1,9 @@
 /**************************************************************************************************
-  Filename:       hal_battery_monitor.h
-  Revised:        $Date: 2016-04-04 21:54:16 +0800 (Mon, 4 Apr 2016) $
+  Filename:       hal_uart_cc2530.h
+  Revised:        $Date: 2016-04-14 17:21:16 +0800 (Thus, 14 Apr 2016) $
   Revision:       $Revision: 1 $
 
-  Description:    This file contains the interface to the battery measurement.
+  Description:    This file contains the interface to uart Service.
 
 
   Copyright 2016 Bupt. All rights reserved.
@@ -35,10 +35,11 @@
 
   Should you have any questions regarding your right to use this Software,
   contact kylinnevercry@gami.com. 
+  UART 驱动
 **************************************************************************************************/
 
-#ifndef HAL_BATTERY_MONITOR_H
-#define HAL_BATTERY_MONITOR_H
+#ifndef HAL_UART_CC2530_H
+#define HAL_UART_CC2530_H
 
 #ifdef __cplusplus
 extern "C"
@@ -49,43 +50,40 @@ extern "C"
  *                                             INCLUDES
  **************************************************************************************************/
 #include "hal_type.h"
-  
+
+/***************************************************************************************************
+ *                                              TYPEDEFS
+ ***************************************************************************************************/
+
+
 /**************************************************************************************************
- * MACROS
+ *                                              MACROS
  **************************************************************************************************/
 
   
 /**************************************************************************************************
  *                                            CONSTANTS
  **************************************************************************************************/
-#define BATTERY_MEASURE_SHOW        0
-#define BATTERY_NO_MEASURE_SHOW     1
- 
-#define BATTER_CYCLE_X  66
-#define BATTER_CYCLE_Y  0
+#define START_MEASURE   0x01
+#define STOP_MEASURE    0x02
+#define SYNC_MEASURE    0x03
+#define DATA_START      0x33    // 数据开始校验位
+#define DATA_END        0x55    // 数据结束校验位
+  
 /**************************************************************************************************
  *                                             FUNCTIONS - API
  **************************************************************************************************/
 
 /*
- * Initialize Battery Monitor.
+ * Initialize UCA1 UART.
  */
-extern void HalBattMonInit(void);
+extern void UART1_Config_Init(void);
 
 /*
- * Get the Battery voltage.
+ * Send buffer.
  */
-extern float HalGetBattVol(void);
+extern void UART1_Send_Buffer(uint8 *buffer,uint16 len);
 
-/*
- * Show the Battery voltage on oled.
- */
-extern uint8 HalShowBattVol(uint8 fThreshold);
-
-
-extern void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num);
-
-extern void OLED_ShowString(UCHAR x,UCHAR y,UCHAR size,const UCHAR *p);
 #ifdef __cplusplus
 }
 #endif  

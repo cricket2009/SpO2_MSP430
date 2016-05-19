@@ -1975,7 +1975,31 @@
       <name>$PROJ_DIR$\Driver\hal_battery_monitor.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\Driver\hal_SDcard.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_SDcard.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_spi_user.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_spi_user.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\Driver\hal_type.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_uart_cc2530.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_uart_cc2530.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\PingPongBuf.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\PingPongBuf.h</name>
     </file>
   </group>
   <group>
@@ -2012,6 +2036,36 @@
     </file>
     <file>
       <name>$PROJ_DIR$\F5xx_F6xx_Core_Lib\HAL_UCS.h</name>
+    </file>
+  </group>
+  <group>
+    <name>FATFS</name>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\option\ccsbcs.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\diskio.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\diskio.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\exfuns\exfuns.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\exfuns\exfuns.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ff.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ff.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\ffconf.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\FATFS\src\integer.h</name>
     </file>
   </group>
   <file>

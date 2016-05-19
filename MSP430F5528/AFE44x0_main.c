@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-   
+#include "msp430.h"
 //#include "descriptors.h"
 
 //#include "device.h"
@@ -33,6 +33,10 @@
 #include "Spo2_Functions.h"   
 
 #include "hal_battery_monitor.h"
+#include "hal_SDcard.h"
+#include "exfuns.h"
+#include "ff.h"
+#include "hal_uart_cc2530.h"
 //==============================================================================
 
 #define SYS_CLK 16000000 //15597800    // 16Mhz
@@ -234,6 +238,17 @@ int HR_OLED_flag = 0;  // 初始化后开始更新OLED的HR的标志，若为1则开始更新OLED
 
 //延时计数
 int Device_waite_time1;
+
+// 初始化之前就关闭看门狗，不然初始化时间过长，会造成系统不断复位
+int __low_level_init(void)
+{
+  // stop WDT
+  WDTCTL = WDTPW + WDTHOLD;
+ 
+  // Perform data segment initialization
+  return 1;
+}
+
 /*  
  * ======== main ========
  */
@@ -241,7 +256,8 @@ void main (void)
 {
     //关闭看门狗 
     WDTCTL = WDTPW + WDTHOLD;                                   //Stop watchdog timer
-   
+    uint8 buffer[3] = {DATA_START,START_MEASURE,DATA_END};
+    
     //系统初始化
     Device_status = DEVICE_WAIT;    //默认普通显示状态
     Init_Ports();                                               //Init ports (do first ports because clocks do change ports)
@@ -253,6 +269,16 @@ void main (void)
     oledinit();               // Initialize OLED
     Init_KEY_Interrupt();
     HalBattMonInit();   //Initialize Battery monitor
+    
+    // Init UART to CC2530
+    UART1_Config_Init();
+    
+    // SD卡初始化
+    while(SD_Initialize());
+    exfuns_init();      // 申请文件系统内存
+    f_mount(0,fs);      // 挂载文件系统  
+    f_mkdir("0:S");     // 创建文件夹
+    
     //首页面显示
     OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");
@@ -265,6 +291,7 @@ void main (void)
     //开启全局总中断
     __enable_interrupt();            //Enable interrupts globally
     
+    UART1_Send_Buffer(buffer,3);
     while (1)
     {
       if(Device_status == DEVICE_WAIT)
@@ -500,6 +527,41 @@ __interrupt void TIMER1_A0_ISR (void)
   
 }
 
+// UART1--CC2530 接收中断函数
+#pragma vector=USCI_A1_VECTOR
+__interrupt void UART1_CC2530RX_ISR(void)
+{
+  static uint8 receiveFlag = 0;
+  static uint8 controlMessage = 0;
+  uint8 receiveMessage = UCA1RXBUF;
+  switch(receiveFlag)
+  {
+    case 0:
+      if(receiveMessage == DATA_START)
+        receiveFlag = 1;
+      else
+        receiveFlag = 0;
+      break;
+    case 1:
+      if(receiveMessage == START_MEASURE || receiveMessage == STOP_MEASURE || SYNC_MEASURE)
+      {
+        controlMessage = receiveMessage;
+        receiveFlag = 2;
+      }
+      else
+        receiveFlag = 0;
+      break;
+    case 2:
+      if(receiveMessage == DATA_END)
+      {
+        // 根据controlMessage的值进行不同的处理
+        
+        
+        receiveFlag = 0;
+      }
+      break;
+  }
+}
 
 // Port 2 interrupt service routine 采样频率为80Hz，也就是每1/80s进入一次中断
 #pragma vector=PORT2_VECTOR  //DRDY interrupt
@@ -816,3 +878,4 @@ void Init_KEY_Interrupt (void)
     P1IFG &= ~BIT6;             // P1.7 IFG cleared
     P1IE |= BIT6;               // P1.7 interrupt enabled
 }
+
