@@ -67,6 +67,10 @@ extern "C"
 #define START_MEASURE   0x01
 #define STOP_MEASURE    0x02
 #define SYNC_MEASURE    0x03
+#define FIND_NWK        0x04
+#define END_DEVICE      0x05
+#define CLOSEING        0x06
+#define CLOSE_NWK       0x07
 #define DATA_START      0x33    // 数据开始校验位
 #define DATA_END        0x55    // 数据结束校验位
   
@@ -83,6 +87,11 @@ extern void UART1_Config_Init(void);
  * Send buffer.
  */
 extern void UART1_Send_Buffer(uint8 *buffer,uint16 len);
+
+/*
+ * Send Byte
+ */
+extern void UART1_Send_Byte(uint8 data);
 
 #ifdef __cplusplus
 }

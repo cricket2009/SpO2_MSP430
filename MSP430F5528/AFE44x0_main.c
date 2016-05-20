@@ -37,6 +37,7 @@
 #include "exfuns.h"
 #include "ff.h"
 #include "hal_uart_cc2530.h"
+#include "PingPongBuf.h"
 //==============================================================================
 
 #define SYS_CLK 16000000 //15597800    // 16Mhz
@@ -229,7 +230,7 @@ int Finger_out = 0;
 extern void write_oled_command(unsigned char ucCmd);
 extern void write_oled_data(unsigned char ucData);
 
-int Device_status;        //默认等待状态
+SpO2SystemStatus_t SpO2SystemStatus;
 int Finger_out_num = 0;   //手指离开状态计数器
 
 
@@ -239,6 +240,9 @@ int HR_OLED_flag = 0;  // 初始化后开始更新OLED的HR的标志，若为1则开始更新OLED
 //延时计数
 int Device_waite_time1;
 
+// pingPong buffer
+PingPongBuf_t *pingPongBuf_ForSD;
+uint8 bufferSend[3] = {DATA_START,DATA_START,DATA_END};
 // 初始化之前就关闭看门狗，不然初始化时间过长，会造成系统不断复位
 int __low_level_init(void)
 {
@@ -256,10 +260,8 @@ void main (void)
 {
     //关闭看门狗 
     WDTCTL = WDTPW + WDTHOLD;                                   //Stop watchdog timer
-    uint8 buffer[3] = {DATA_START,START_MEASURE,DATA_END};
-    
     //系统初始化
-    Device_status = DEVICE_WAIT;    //默认普通显示状态
+    SpO2SystemStatus = SpO2_OFFLINE_IDLE;    //默认普通显示状态
     Init_Ports();                                               //Init ports (do first ports because clocks do change ports)
     SetVCore(3);
     Init_Clock();                                               //Init clocks
@@ -283,18 +285,16 @@ void main (void)
     OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");
     
-    Show_Wait_Symbol();
-    
+    Show_Wait_Symbol("Off_IDLE");
     OLED_Refresh_Gram();
     delay(500000);  
     //Init_TimerA1();
     //开启全局总中断
     __enable_interrupt();            //Enable interrupts globally
     
-    UART1_Send_Buffer(buffer,3);
     while (1)
     {
-      if(Device_status == DEVICE_WAIT)
+      if(SpO2SystemStatus == SpO2_OFFLINE_IDLE)
       {
         //打开显示器
         OLED_SLEEP(0);     
@@ -304,9 +304,21 @@ void main (void)
           Device_waite_time1++;
         }
         else
-          Device_status = DEVICE_SLEEP;          
+          SpO2SystemStatus = SpO2_OFF_SLEEP;          
       }
-      else if(Device_status == DEVICE_SLEEP)    //进入睡眠状态
+      else if(SpO2SystemStatus == SpO2_ONLINE_IDLE)
+      {
+        //打开显示器
+        OLED_SLEEP(0);     
+        if(Device_waite_time1 <5000)
+        {
+          delay(3000);
+          Device_waite_time1++;
+        }
+        else
+          SpO2SystemStatus = SpO2_ON_SLEEP;           
+      }
+      else if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_OFF_SLEEP)    //进入睡眠状态
       {
         //关闭显示器
         OLED_SLEEP(1);
@@ -317,7 +329,7 @@ void main (void)
         //进入低功耗
         _BIS_SR(LPM4_bits + GIE);
       }
-      else if(Device_status == DEVICE_MEASURE)  //测量状态
+      else if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE || SpO2SystemStatus == SpO2_ONLINE_MEASURE)  //在线或离线测量状态
       {      
         if (readDataFlag)        // 采用频率80Hz，每秒readDataFlag有80次等于1
         {
@@ -344,9 +356,22 @@ void main (void)
                  Disable_AFE44xx_DRDY_Interrupt();
                  //关闭AFE4400
                  AFE44xx_PowerOff();
-                 Device_status = DEVICE_WAIT;  
+                 
                  OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-                 Show_Wait_Symbol();
+                 if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE)   // 离线测量状态切换到离线空闲
+                 {
+                   SpO2SystemStatus = SpO2_OFFLINE_IDLE;
+                   Show_Wait_Symbol("Off-IDLE");
+                 }
+                 else if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 在线测量状态切换到在线空闲
+                 {
+                   SpO2SystemStatus = SpO2_ONLINE_IDLE;
+                   Show_Wait_Symbol("On-IDLE ");
+                   // 发送停止测量消息，告诉CC2530释放空间
+                   bufferSend[1] = STOP_MEASURE;
+                   UART1_Send_Buffer(bufferSend,3);
+                 }
+                 
                  OLED_Refresh_Gram();
                  continue;
                }
@@ -357,6 +382,7 @@ void main (void)
             }
             else
             {
+              Finger_out_num = 0;
                //计算HR(PR)             
                if(abs(HR_diff-HR_raw)<=2 && (HR_diff != HR_diff_old || HR_raw != HR_raw_old))
                {
@@ -443,9 +469,9 @@ void Init_Clock (void)
 }
 
 
-void Show_Wait_Symbol(void)
+void Show_Wait_Symbol(const UCHAR *p)
 {
-    OLED_ShowString(SPO2_Symbol_Start_X,0,12,"Ready");
+    OLED_ShowString(SPO2_Symbol_Start_X,0,12,p);
     OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X,SPO2_Wait_Symbol_Start_Y,1);
     OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X+16,SPO2_Wait_Symbol_Start_Y,1);
     OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X+32,SPO2_Wait_Symbol_Start_Y,1);
@@ -554,8 +580,132 @@ __interrupt void UART1_CC2530RX_ISR(void)
     case 2:
       if(receiveMessage == DATA_END)
       {
+        Device_waite_time1 = 0;  //等待状态计数值清0
+        Finger_out_num = 0;      //计数器状态清0
         // 根据controlMessage的值进行不同的处理
-        
+        switch(controlMessage)
+        {
+          case START_MEASURE: //启动测量命令
+            if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_ONLINE_IDLE) // 在线睡眠状态或在线空闲状态
+            {
+              if(SpO2SystemStatus == SpO2_ON_SLEEP) // 处于睡眠状态先退出低功耗
+                LPM4_EXIT; // 退出低功耗
+              
+              SpO2SystemStatus = SpO2_ONLINE_MEASURE;
+              //打开定时器中断
+              //TA1CCTL0 |= CCIE;
+              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
+              OLED_Refresh_Gram();
+              //打开显示器
+              OLED_SLEEP(0);
+              
+              //打开AFE4400
+              AFE44xx_PowerOn();
+              //打开AFE4400的中断
+              Enable_AFE44xx_DRDY_Interrupt();
+            }
+            break;
+          
+          case STOP_MEASURE: // 停止测量命令
+            if(SpO2SystemStatus == SpO2_ONLINE_MEASURE)
+            {
+               SpO2SystemStatus = SpO2_ONLINE_IDLE;
+              //关闭定时器中断
+              // TA1CCTL0 &= ~CCIE;
+              //关闭AFE4400的中断
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              Show_Wait_Symbol("On_IDLE ");
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              OLED_Refresh_Gram();             
+            }
+            break;
+            
+          case SYNC_MEASURE: // 同步消息
+            break;
+            
+          case FIND_NWK:  // 正在找网消息
+            if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 如果是正在在线测量
+            {
+              // 停止测量
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标              
+            }
+            if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE) // 如果是正在离线测量
+            {
+              // 关闭测量
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标 
+              // 释放空间
+              
+              // 关闭文件
+            }
+            if(SpO2SystemStatus == SpO2_OFF_SLEEP || SpO2SystemStatus == SpO2_ON_SLEEP) // 如果是睡眠
+            {
+               LPM4_EXIT;
+              //打开显示器
+              OLED_SLEEP(0);
+            }
+            if(SpO2SystemStatus == SpO2_ONLINE_IDLE) // 空闲状态
+            {
+              // do nothing
+            }
+            SpO2SystemStatus = SpO2_FIND_NETWORK;
+            Show_Wait_Symbol("FIND_NWK");
+            OLED_Refresh_Gram(); 
+            break;
+            
+          case END_DEVICE:  // 找到网络消息 只可能从FIND_NWK到这个状态
+            SpO2SystemStatus = SpO2_ONLINE_IDLE;
+            Show_Wait_Symbol("On_IDLE ");
+            OLED_Refresh_Gram(); 
+            break;
+             
+          case CLOSEING:   // 正在关闭网络消息
+            if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 在线测量状态关闭网络
+            {
+              // 关闭测量
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标             
+              SpO2SystemStatus = SpO2_CLOSING;
+              Show_Wait_Symbol("CLOSING ");
+              OLED_Refresh_Gram(); 
+            }
+            if(SpO2SystemStatus == SpO2_ONLINE_IDLE || SpO2SystemStatus == SpO2_FIND_NETWORK) // 在线空闲状态或寻找网络状态下下关闭网络
+            {
+              SpO2SystemStatus = SpO2_CLOSING;
+              Show_Wait_Symbol("CLOSING ");
+              OLED_Refresh_Gram();               
+            }
+            if(SpO2SystemStatus == SpO2_ON_SLEEP) // 睡眠状态下关闭网络
+            {
+              // 切换到离线睡眠
+              SpO2SystemStatus = SpO2_OFF_SLEEP;
+            }
+            break;
+            
+          case CLOSE_NWK:
+            if(SpO2SystemStatus != SpO2_OFF_SLEEP)
+            {
+              SpO2SystemStatus = SpO2_OFFLINE_IDLE;
+              Show_Wait_Symbol("Off_IDLE");
+              OLED_Refresh_Gram(); 
+            }
+            break;
+          default:break;
+
+        }
         
         receiveFlag = 0;
       }
@@ -593,12 +743,20 @@ __interrupt void Port_1(void)
     P1IE &= ~BIT6;               // P1.7 interrupt DISABLE
     Device_waite_time1 = 0;  //等待状态计数值清0
     Finger_out_num = 0;      //计数器状态清0
-    if(Device_status == DEVICE_SLEEP)//处于睡眠态，长按短按都是进入等待态
+    if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_OFF_SLEEP)//处于睡眠态，长按短按都是进入等待态，只有离线状态才能进入等待状态
     {
-      Device_status = DEVICE_WAIT;
-      LPM4_EXIT;
       OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-      Show_Wait_Symbol();
+      if(SpO2SystemStatus == SpO2_OFF_SLEEP)   // 离线测量状态切换到离线空闲
+      {
+        SpO2SystemStatus = SpO2_OFFLINE_IDLE;
+        Show_Wait_Symbol("Off-IDLE");
+      }
+      else if(SpO2SystemStatus == SpO2_ON_SLEEP) // 在线测量状态切换到在线空闲
+      {
+        SpO2SystemStatus = SpO2_ONLINE_IDLE;
+        Show_Wait_Symbol("On-IDLE ");
+      }
+      LPM4_EXIT;
       OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
       OLED_Refresh_Gram();
     }
@@ -616,40 +774,89 @@ __interrupt void Port_1(void)
         Press_type = 0;
       else
         Press_type = 1;         //长按
-      if(Device_status == DEVICE_WAIT)//处于等待状态
+      
+      
+      switch(SpO2SystemStatus)
       {
-        if(Press_type == 0)//短按，开始测量
-        {
-          Device_status = DEVICE_MEASURE;
-          //打开AFE4400
-          AFE44xx_PowerOn();
-          //打开AFE4400的中断
-          Enable_AFE44xx_DRDY_Interrupt();
-          //打开定时器中断
-          //TA1CCTL0 |= CCIE;
-          OLED_ShowString(SPO2_Symbol_Start_X,0,12,"Go   ");
-        }
-        else//长按，关屏
-          Device_status = DEVICE_SLEEP;
-      }
-      else if(Device_status == DEVICE_MEASURE)//处于测量状态
-      {
-        if(Press_type == 0)//短按，停止测量
-        {
-          Device_status = DEVICE_WAIT;
-          //关闭定时器中断
-         // TA1CCTL0 &= ~CCIE;
-          //关闭AFE4400的中断
-          Disable_AFE44xx_DRDY_Interrupt();          
-          //关闭AFE4400
-          AFE44xx_PowerOff();
-          OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-          Show_Wait_Symbol();
-          OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-          OLED_Refresh_Gram();
-        }
-        else//长按，关屏
-          Device_status = DEVICE_SLEEP;
+          case SpO2_OFFLINE_IDLE: // 离线等待状态
+            if(Press_type == 0)//短按，开始测量
+            {      
+              SpO2SystemStatus = SpO2_OFFLINE_MEASURE;
+              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
+              OLED_Refresh_Gram();
+              //打开AFE4400
+              AFE44xx_PowerOn();
+              //打开AFE4400的中断
+              Enable_AFE44xx_DRDY_Interrupt();
+              //打开定时器中断
+              //TA1CCTL0 |= CCIE;
+            }
+            else//长按，关屏
+              SpO2SystemStatus = SpO2_OFF_SLEEP; 
+            break;
+          
+          case SpO2_ONLINE_IDLE: // 处于在线等待状态
+            if(Press_type == 0)//短按，开始测量
+            {
+              // 发送开始测量消息，告诉CC2530申请空间
+              bufferSend[1] = START_MEASURE;
+              UART1_Send_Buffer(bufferSend,3);
+              
+              SpO2SystemStatus = SpO2_ONLINE_MEASURE;
+              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
+              OLED_Refresh_Gram();
+              //打开AFE4400
+              AFE44xx_PowerOn();
+              //打开AFE4400的中断
+              Enable_AFE44xx_DRDY_Interrupt();
+              //打开定时器中断
+              //TA1CCTL0 |= CCIE;
+            }
+            else//长按，关屏
+              SpO2SystemStatus = SpO2_ON_SLEEP;
+            break;
+            
+          case SpO2_OFFLINE_MEASURE: //处于离线测量状态
+            if(Press_type == 0)//短按，停止测量
+            {
+              SpO2SystemStatus = SpO2_OFFLINE_IDLE;
+              //关闭定时器中断
+              // TA1CCTL0 &= ~CCIE;
+              //关闭AFE4400的中断
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              Show_Wait_Symbol("Off_IDLE");
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              OLED_Refresh_Gram();
+            }
+            else//长按，关屏
+              SpO2SystemStatus = SpO2_OFF_SLEEP;
+            break;
+            
+          case SpO2_ONLINE_MEASURE: // 处于在线测量状态
+            if(Press_type == 0)//短按，停止测量
+            {
+              SpO2SystemStatus = SpO2_ONLINE_IDLE;
+              //关闭定时器中断
+              // TA1CCTL0 &= ~CCIE;
+              //关闭AFE4400的中断
+              Disable_AFE44xx_DRDY_Interrupt();          
+              //关闭AFE4400
+              AFE44xx_PowerOff();
+              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              Show_Wait_Symbol("On_IDLE ");
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              OLED_Refresh_Gram();
+              bufferSend[1] = STOP_MEASURE;
+              UART1_Send_Buffer(bufferSend,3);
+            }
+            else//长按，关屏
+              SpO2SystemStatus = SpO2_ON_SLEEP;
+            break;
+
+           default:break; // 其他状态直接退出，找网
       }
     }
     P1IFG &= ~BIT6;             // P1.6 IFG cleared
@@ -707,7 +914,7 @@ void Init_UART()
 /*  
  * ======== UART_send  ========
  */
-
+uint32 a = 0;
 void UART_send(unsigned char* byt_string, int length)
 {
   int ii;
@@ -718,11 +925,24 @@ void UART_send(unsigned char* byt_string, int length)
   }
 }
 
-
 void Cal_spo2_and_HR(void)
 {
     AFE44xx_SPO2_Data_buf[0] = AFE44xx_Reg_Read(46);  //read RED - Ambient Data
     AFE44xx_SPO2_Data_buf[1] = AFE44xx_Reg_Read(47);  //read IR - Ambient Data
+    
+    if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 处于在线测量发送数据
+    {
+      // 先低位再高位
+      //SendRedAndIRToCC2530(AFE44xx_SPO2_Data_buf[0],AFE44xx_SPO2_Data_buf[1]);
+      SendRedAndIRToCC2530(a,a,a,a);
+      a++;
+      if(a == 8)
+        a=0;
+    }
+//    if(SpO2SystemStatus != SpO2_ONLINE_MEASURE)
+//    {
+//      while(1);
+//    }
     if (AFE44xx_SPO2_Data_buf[0] > 2000000 ||AFE44xx_SPO2_Data_buf[1] > 2000000 )//判断Finger OUt状态
     {
       Finger_out = 1;  // finger out 标志置1，表示手指脱离指夹
@@ -872,10 +1092,27 @@ void Cal_spo2_and_HR(void)
 void Init_KEY_Interrupt (void)
 {
     P1DIR &= ~BIT6;
-    P1REN |= BIT6;              // Enable P1.7 internal resistance
-    P1OUT |= BIT6;              // Set P1.7 as pull-Up resistance
-    P1IES |= BIT6;              // P1.7 Hi/Lo edge 下降延中断
-    P1IFG &= ~BIT6;             // P1.7 IFG cleared
-    P1IE |= BIT6;               // P1.7 interrupt enabled
+    P1REN |= BIT6;              // Enable P1.6 internal resistance
+    P1OUT |= BIT6;              // Set P1.6 as pull-Up resistance
+    P1IES |= BIT6;              // P1.6 Hi/Lo edge 下降延中断
+    P1IFG &= ~BIT6;             // P1.6 IFG cleared
+    P1IE |= BIT6;               // P1.6 interrupt enabled
 }
 
+void SendRedAndIRToCC2530(uint32 REDdata,uint32 IRdata,uint16 SpO2_temp,uint16 HR_temp)
+{
+  UART1_Send_Byte((REDdata & 0xFF));
+  UART1_Send_Byte((REDdata & 0xFF00) >> 8);
+  UART1_Send_Byte((REDdata & 0xFF0000) >> 16);
+  UART1_Send_Byte((REDdata & 0xFF000000) >> 24);      
+  
+  UART1_Send_Byte((IRdata & 0xFF));
+  UART1_Send_Byte((IRdata & 0xFF00) >> 8);
+  UART1_Send_Byte((IRdata & 0xFF0000) >> 16);
+  UART1_Send_Byte((IRdata & 0xFF000000) >> 24);      
+  
+  UART1_Send_Byte((SpO2_temp & 0xFF));
+  UART1_Send_Byte((SpO2_temp & 0xFF00) >> 8);
+  UART1_Send_Byte((HR_temp & 0xFF));
+  UART1_Send_Byte((HR_temp & 0xFF00) >> 8);
+}

@@ -80,8 +80,8 @@ typedef struct
   uint8  active_buf_flag; // only last bit is valid
   uint16 write_count;     // 已经写入到buff的数据量
   uint16 buf_size;        // buff的大小，用户定义
-  uint16 *pBuf_ping;
-  uint16 *pBuf_pong;
+  uint32 *pBuf_ping;
+  uint32 *pBuf_pong;
 } PingPongBuf_t;
 
 
@@ -111,7 +111,7 @@ extern BufOpStatus_t PingPongBufWrite(PingPongBuf_t *pingPongBuf,uint16 writeDat
  * Read all data from inactive buffer.
  */
 extern BufOpStatus_t PingPongBufRead(PingPongBuf_t *pingPongBuf,
-                                     uint16 **dataBuf);
+                                     uint32 **dataBuf);
 
 /*
  * Free PingPong buff memory.

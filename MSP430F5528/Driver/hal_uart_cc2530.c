@@ -95,9 +95,12 @@ void UART1_Config_Init(void)
                                                 // [b7]   0 - 无奇偶校验位.
   
   UCA1CTL1 |= UCSSEL_2;               	// select SMCLK as clock source 16Mhz
-  UCA1BR0 = 0xA0;                       // 16Mhz 38400
-  UCA1BR1 = 0x01;
-  UCA1MCTL = UCBRS_6;
+//  UCA1BR0 = 0xA0;                       // 16Mhz 115200
+//  UCA1BR1 = 0x01;
+//  UCA1MCTL = UCBRS_6;
+  UCA1BR0 = 0x8A;                       // 16Mhz 115200
+  UCA1BR1 = 0x00;
+  UCA1MCTL = UCBRS_7;
   UCA1CTL1 &= ~UCSWRST;                 // Clear SW reset, resume operation  
   
   UCA1IFG &= ~UCRXIFG;                  // 清空接收中断标志
@@ -122,6 +125,22 @@ void UART1_Send_Buffer(uint8 *buffer,uint16 len)
     UCA1TXBUF = buffer[i];
     while(!(UCA1IFG & UCTXIFG)); //等待发送结束 
   }
+}
+
+
+/**************************************************************************************************
+ * @fn      UUART1_Send_Byte
+ *
+ * @brief   Send Byte
+ *
+ * @param   none
+ *
+ * @return  None
+ **************************************************************************************************/
+void UART1_Send_Byte(uint8 data)
+{
+  UCA1TXBUF = data;
+  while(!(UCA1IFG & UCTXIFG)); //等待发送结束 
 }
 
 

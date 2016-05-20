@@ -60,7 +60,7 @@
 
 #ifndef AFE44x0_MAIN_H_
 #define AFE44x0_MAIN_H_
-
+#include "hal_type.h"               //Basic Type declarations
 #define SOT     0x02
 #define EOT     0x03
 #define CR      0x0D
@@ -76,9 +76,20 @@
 #define __AFE4400__
 //#define __AFE4490__
 
-#define DEVICE_SLEEP    0x00        //Ë¯Ãß×´Ì¬
-#define DEVICE_WAIT     0x01        //µÈ´ý×´Ì¬
-#define DEVICE_MEASURE  0x02        //²âÁ¿×´Ì¬
+typedef enum
+{
+  SpO2_ONLINE_IDLE,             // ÔÚÏßµÈ´ý×´Ì¬
+  SpO2_ONLINE_MEASURE,          // ÔÚÏß²âÁ¿×´Ì¬
+  SpO2_OFFLINE_IDLE,            // ÀëÏßµÈ´ý×´Ì¬
+  SpO2_OFFLINE_MEASURE,         // ÀëÏß²âÁ¿×´Ì¬
+  SpO2_FIND_NETWORK,            // ÕÒÍø×´Ì¬
+  SpO2_SYNC_DATA,               // Í¬²½Êý¾Ý×´Ì¬
+  SpO2_CLOSING,                 // ¹Ø±ÕÍøÂç×´Ì¬
+  SpO2_ON_SLEEP,                // ÔÚÏßË¯Ãß×´Ì¬
+  SpO2_OFF_SLEEP,               // ÀëÏßË¯Ãß×´Ì¬ 
+} SpO2SystemStatus_t;
+
+extern SpO2SystemStatus_t SpO2SystemStatus;
 
 #define SPO2_Wait_Symbol_Start_X 11
 #define SPO2_Wait_Symbol_Start_Y 40
@@ -104,12 +115,12 @@
 #define PR_Symbol_Start_X     88
 #define PR_Symbol_Start_Y     12
 
-#define Heart_Sympol_Start_X    65
+#define Heart_Sympol_Start_X    62
 #define Heart_Sympol_Start_Y    0
 //Function declarations
 void Init_Ports (void);
 void Init_Clock (void);
-void Show_Wait_Symbol(void);
+void Show_Wait_Symbol(const UCHAR *p);
 void Init_TimerA1 (void);
 void Cal_spo2_and_HR(void);
 void Init_KEY_Interrupt (void);
@@ -120,7 +131,7 @@ void ADG1608_select(unsigned char S_number);
 void UART_send(unsigned char* byt_string, int length);
 void Init_UART();
 void UART_send(unsigned char* byt_string, int length);
-
+void SendRedAndIRToCC2530(uint32 REDdata,uint32 IRdata,uint16 SpO2_temp,uint16 HR_temp);
 //volatile unsigned char RxBuffer[6]; 
 //unsigned char MMA8451_senddata[8];
 

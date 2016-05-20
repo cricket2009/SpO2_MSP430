@@ -61,7 +61,7 @@ extern "C"
 #define BATTERY_MEASURE_SHOW        0
 #define BATTERY_NO_MEASURE_SHOW     1
  
-#define BATTER_CYCLE_X  66
+#define BATTER_CYCLE_X  76
 #define BATTER_CYCLE_Y  0
 /**************************************************************************************************
  *                                             FUNCTIONS - API

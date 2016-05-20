@@ -275,7 +275,7 @@ void OLED_ShowChar(UCHAR x,UCHAR y,UCHAR chr,UCHAR size,UCHAR mode)
 	}
 	else if(size == 12)
 	{	   //单点模式			   
-	    for(t=0;t<16;t++)
+	    for(t=0;t<12;t++)
 	    {   
 			temp=oled_asc2_1206[chr][t];  //调用1206字体
 			for(t1=0;t1<8;t1++)
@@ -445,14 +445,14 @@ void OLED_ShowNum(UCHAR x,UCHAR y,int num,UCHAR len,UCHAR size)
 void OLED_ShowString(UCHAR x,UCHAR y,UCHAR size,const UCHAR *p)
 {
 #define MAX_CHAR_POSX 122
-#define MAX_CHAR_POSY 52          
+#define MAX_CHAR_POSY 62          
     while(*p!='\0')
     {       
         if(x>MAX_CHAR_POSX){x=0;y+=16;}
         if(y>MAX_CHAR_POSY){y=x=0;OLED_Clear();}
         OLED_ShowChar(x,y,*p,size,1);
         if(size == 12)
-          x+=8;
+          x+=6;
         else if(size == 16)
           x+=10;
         else
@@ -602,8 +602,7 @@ void  SSD1306(void)
 //=======================================================
 void oledinit(void)
 {
-	SSD1306(); 
-
+  SSD1306(); 
 }
 
 void OLED_ShowWaitSymbol(UCHAR x,UCHAR y,UCHAR mode)
