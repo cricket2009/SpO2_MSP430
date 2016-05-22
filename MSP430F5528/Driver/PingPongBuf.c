@@ -234,3 +234,4 @@ BufOpStatus_t PingPongBufRead(PingPongBuf_t *pingPongBuf,
   
   return OpStatus;
 }
+

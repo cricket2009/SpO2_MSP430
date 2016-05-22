@@ -242,7 +242,8 @@ int Device_waite_time1;
 
 // pingPong buffer
 PingPongBuf_t *pingPongBuf_ForSD;
-uint8 bufferSend[3] = {DATA_START,DATA_START,DATA_END};
+uint8 bufferSendToCC2530[68];
+uint8 writeNum;
 // 初始化之前就关闭看门狗，不然初始化时间过长，会造成系统不断复位
 int __low_level_init(void)
 {
@@ -318,7 +319,7 @@ void main (void)
         else
           SpO2SystemStatus = SpO2_ON_SLEEP;           
       }
-      else if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_OFF_SLEEP)    //进入睡眠状态
+      else if(SpO2SystemStatus == SpO2_OFF_SLEEP || SpO2SystemStatus == SpO2_ON_SLEEP)    //进入离线睡眠状态
       {
         //关闭显示器
         OLED_SLEEP(1);
@@ -327,7 +328,7 @@ void main (void)
         //关闭AFE4400的中断
         Disable_AFE44xx_DRDY_Interrupt();
         //进入低功耗
-        _BIS_SR(LPM4_bits + GIE);
+        _BIS_SR(LPM3_bits + GIE);
       }
       else if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE || SpO2SystemStatus == SpO2_ONLINE_MEASURE)  //在线或离线测量状态
       {      
@@ -367,9 +368,6 @@ void main (void)
                  {
                    SpO2SystemStatus = SpO2_ONLINE_IDLE;
                    Show_Wait_Symbol("On-IDLE ");
-                   // 发送停止测量消息，告诉CC2530释放空间
-                   bufferSend[1] = STOP_MEASURE;
-                   UART1_Send_Buffer(bufferSend,3);
                  }
                  
                  OLED_Refresh_Gram();
@@ -569,19 +567,15 @@ __interrupt void UART1_CC2530RX_ISR(void)
         receiveFlag = 0;
       break;
     case 1:
-      if(receiveMessage == START_MEASURE || receiveMessage == STOP_MEASURE || SYNC_MEASURE)
-      {
         controlMessage = receiveMessage;
         receiveFlag = 2;
-      }
-      else
-        receiveFlag = 0;
       break;
     case 2:
       if(receiveMessage == DATA_END)
       {
         Device_waite_time1 = 0;  //等待状态计数值清0
         Finger_out_num = 0;      //计数器状态清0
+ 
         // 根据controlMessage的值进行不同的处理
         switch(controlMessage)
         {
@@ -589,7 +583,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
             if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_ONLINE_IDLE) // 在线睡眠状态或在线空闲状态
             {
               if(SpO2SystemStatus == SpO2_ON_SLEEP) // 处于睡眠状态先退出低功耗
-                LPM4_EXIT; // 退出低功耗
+                LPM3_EXIT; // 退出低功耗
               
               SpO2SystemStatus = SpO2_ONLINE_MEASURE;
               //打开定时器中断
@@ -598,11 +592,13 @@ __interrupt void UART1_CC2530RX_ISR(void)
               OLED_Refresh_Gram();
               //打开显示器
               OLED_SLEEP(0);
-              
+              // 初始化写入次数
+              writeNum = 0;
               //打开AFE4400
               AFE44xx_PowerOn();
               //打开AFE4400的中断
               Enable_AFE44xx_DRDY_Interrupt();
+
             }
             break;
           
@@ -650,9 +646,10 @@ __interrupt void UART1_CC2530RX_ISR(void)
             }
             if(SpO2SystemStatus == SpO2_OFF_SLEEP || SpO2SystemStatus == SpO2_ON_SLEEP) // 如果是睡眠
             {
-               LPM4_EXIT;
-              //打开显示器
-              OLED_SLEEP(0);
+               LPM3_EXIT;
+               Device_waite_time1 = 0;
+               //打开显示器
+               OLED_SLEEP(0);
             }
             if(SpO2SystemStatus == SpO2_ONLINE_IDLE) // 空闲状态
             {
@@ -690,18 +687,19 @@ __interrupt void UART1_CC2530RX_ISR(void)
             }
             if(SpO2SystemStatus == SpO2_ON_SLEEP) // 睡眠状态下关闭网络
             {
-              // 切换到离线睡眠
-              SpO2SystemStatus = SpO2_OFF_SLEEP;
+              Device_waite_time1 = 0;
+              SpO2SystemStatus = SpO2_CLOSING;
+              Show_Wait_Symbol("CLOSING ");
+              OLED_Refresh_Gram();
+              OLED_SLEEP(0);
+              LPM3_EXIT;    
             }
             break;
             
           case CLOSE_NWK:
-            if(SpO2SystemStatus != SpO2_OFF_SLEEP)
-            {
               SpO2SystemStatus = SpO2_OFFLINE_IDLE;
               Show_Wait_Symbol("Off_IDLE");
               OLED_Refresh_Gram(); 
-            }
             break;
           default:break;
 
@@ -741,8 +739,9 @@ __interrupt void Port_1(void)
   {
   case P1IV_P1IFG6:
     P1IE &= ~BIT6;               // P1.7 interrupt DISABLE
-    Device_waite_time1 = 0;  //等待状态计数值清0
-    Finger_out_num = 0;      //计数器状态清0
+    Device_waite_time1 = 0;  // 等待状态计数值清0
+    Finger_out_num = 0;      // 计数器状态清0
+    writeNum = 0;            // 初始化写入次数
     if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_OFF_SLEEP)//处于睡眠态，长按短按都是进入等待态，只有离线状态才能进入等待状态
     {
       OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
@@ -756,7 +755,7 @@ __interrupt void Port_1(void)
         SpO2SystemStatus = SpO2_ONLINE_IDLE;
         Show_Wait_Symbol("On-IDLE ");
       }
-      LPM4_EXIT;
+      LPM3_EXIT;
       OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
       OLED_Refresh_Gram();
     }
@@ -797,11 +796,7 @@ __interrupt void Port_1(void)
           
           case SpO2_ONLINE_IDLE: // 处于在线等待状态
             if(Press_type == 0)//短按，开始测量
-            {
-              // 发送开始测量消息，告诉CC2530申请空间
-              bufferSend[1] = START_MEASURE;
-              UART1_Send_Buffer(bufferSend,3);
-              
+            {          
               SpO2SystemStatus = SpO2_ONLINE_MEASURE;
               OLED_ShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
               OLED_Refresh_Gram();
@@ -849,8 +844,6 @@ __interrupt void Port_1(void)
               Show_Wait_Symbol("On_IDLE ");
               OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
               OLED_Refresh_Gram();
-              bufferSend[1] = STOP_MEASURE;
-              UART1_Send_Buffer(bufferSend,3);
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_ON_SLEEP;
@@ -925,6 +918,7 @@ void UART_send(unsigned char* byt_string, int length)
   }
 }
 
+uint8 aa = 0;
 void Cal_spo2_and_HR(void)
 {
     AFE44xx_SPO2_Data_buf[0] = AFE44xx_Reg_Read(46);  //read RED - Ambient Data
@@ -932,17 +926,16 @@ void Cal_spo2_and_HR(void)
     
     if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 处于在线测量发送数据
     {
-      // 先低位再高位
-      //SendRedAndIRToCC2530(AFE44xx_SPO2_Data_buf[0],AFE44xx_SPO2_Data_buf[1]);
-      SendRedAndIRToCC2530(a,a,a,a);
-      a++;
-      if(a == 8)
-        a=0;
+      //SendRedAndIRToCC2530(AFE44xx_SPO2_Data_buf[0],AFE44xx_SPO2_Data_buf[1],spo2,HR);
+      SendRedAndIRToCC2530(aa,aa,aa,aa);
+      ++aa;
+      if(aa == 8)
+        aa = 0;
     }
-//    if(SpO2SystemStatus != SpO2_ONLINE_MEASURE)
-//    {
-//      while(1);
-//    }
+    else // 处于离线测量状态
+    {
+    }
+    
     if (AFE44xx_SPO2_Data_buf[0] > 2000000 ||AFE44xx_SPO2_Data_buf[1] > 2000000 )//判断Finger OUt状态
     {
       Finger_out = 1;  // finger out 标志置1，表示手指脱离指夹
@@ -1099,20 +1092,26 @@ void Init_KEY_Interrupt (void)
     P1IE |= BIT6;               // P1.6 interrupt enabled
 }
 
+
 void SendRedAndIRToCC2530(uint32 REDdata,uint32 IRdata,uint16 SpO2_temp,uint16 HR_temp)
 {
-  UART1_Send_Byte((REDdata & 0xFF));
-  UART1_Send_Byte((REDdata & 0xFF00) >> 8);
-  UART1_Send_Byte((REDdata & 0xFF0000) >> 16);
-  UART1_Send_Byte((REDdata & 0xFF000000) >> 24);      
-  
-  UART1_Send_Byte((IRdata & 0xFF));
-  UART1_Send_Byte((IRdata & 0xFF00) >> 8);
-  UART1_Send_Byte((IRdata & 0xFF0000) >> 16);
-  UART1_Send_Byte((IRdata & 0xFF000000) >> 24);      
-  
-  UART1_Send_Byte((SpO2_temp & 0xFF));
-  UART1_Send_Byte((SpO2_temp & 0xFF00) >> 8);
-  UART1_Send_Byte((HR_temp & 0xFF));
-  UART1_Send_Byte((HR_temp & 0xFF00) >> 8);
+  uint8 temp = writeNum*8;
+  bufferSendToCC2530[temp++] = (REDdata & 0xFF);
+  bufferSendToCC2530[temp++] = (REDdata & 0xFF00) >> 8;
+  bufferSendToCC2530[temp++] = (REDdata & 0xFF0000) >> 16;
+  bufferSendToCC2530[temp++] = (REDdata & 0xFF000000) >> 24;
+  bufferSendToCC2530[temp++] = (IRdata & 0xFF);
+  bufferSendToCC2530[temp++] = (IRdata & 0xFF00) >> 8;
+  bufferSendToCC2530[temp++] = (IRdata & 0xFF0000) >> 16;
+  bufferSendToCC2530[temp++] = (IRdata & 0xFF000000) >> 24;
+  writeNum++;
+  if(writeNum == 8)
+  {
+    bufferSendToCC2530[temp++] = (SpO2_temp & 0xFF);
+    bufferSendToCC2530[temp++] = (SpO2_temp & 0xFF00) >> 8;
+    bufferSendToCC2530[temp++] = (HR_temp & 0xFF);
+    bufferSendToCC2530[temp++] = (HR_temp & 0xFF00) >> 8;
+    UART1_Send_Buffer(bufferSendToCC2530,68);
+    writeNum = 0;
+  }
 }

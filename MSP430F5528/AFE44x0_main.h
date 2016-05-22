@@ -130,7 +130,6 @@ void ADG1608_select(unsigned char S_number);
 
 void UART_send(unsigned char* byt_string, int length);
 void Init_UART();
-void UART_send(unsigned char* byt_string, int length);
 void SendRedAndIRToCC2530(uint32 REDdata,uint32 IRdata,uint16 SpO2_temp,uint16 HR_temp);
 //volatile unsigned char RxBuffer[6]; 
 //unsigned char MMA8451_senddata[8];
