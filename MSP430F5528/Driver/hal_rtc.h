@@ -1,9 +1,9 @@
 /**************************************************************************************************
-  Filename:       pingPongBuf.h
-  Revised:        $Date: 2016-04-06 15:41:16 +0800 (Wen, 6 Apr 2016) $
+  Filename:       hal_rtc.h
+  Revised:        $Date: 2016-04-07 15:20:16 +0800 (Tues, 7 Apr 2016) $
   Revision:       $Revision: 1 $
 
-  Description:    This file contains the interface to the pingPong buff.
+  Description:    This file contains the interface to the RTC Service.
 
 
   Copyright 2016 Bupt. All rights reserved.
@@ -35,13 +35,11 @@
 
   Should you have any questions regarding your right to use this Software,
   contact kylinnevercry@gami.com. 
-
-  该文件提供Ping Pong Buf 功能的接口API函数
-  供SD卡驱动和ECG采集驱动使用
+  使用MSP430本身的RTC
 **************************************************************************************************/
 
-#ifndef PING_PONG_BUFF_H
-#define PING_PONG_BUFF_H
+#ifndef HAL_RTC_H
+#define HAL_RTC_H
 
 #ifdef __cplusplus
 extern "C"
@@ -52,72 +50,67 @@ extern "C"
  *                                             INCLUDES
  **************************************************************************************************/
 #include "hal_type.h"
+#include "msp430f5528.h"
+/***************************************************************************************************
+ *                                              TYPEDEFS
+ ***************************************************************************************************/
+typedef struct
+{
+  uint8 sec;      //00-59
+  uint8 min;      //00-59
+  uint8 hour;     //使用24小时模式 00-23
+  uint8 date;     //01-28/29 01-30 01-31
+  
+  uint8 month;    //01-12
+  uint8 week;     //01-07
+  uint8 year;     //00-99
+  uint8 WP;       //don't use
+} RTCStruct_t;
 
 /**************************************************************************************************
- * MACROS
+ *                                              MACROS
  **************************************************************************************************/
 
-  
 /**************************************************************************************************
  *                                            CONSTANTS
  **************************************************************************************************/
-
+#define RTC_DS1302_GET        0x00
+#define RTC_DS1302_SET        0x01
+ 
+#define RTC_REGISTER_SEC      0x00
+#define RTC_REGISTER_MIN      0x01
+#define RTC_REGISTER_HOUR     0x02
+#define RTC_REGISTER_DATE     0x03
+#define RTC_REGISTER_MONTH    0x04
+#define RTC_REGISTER_WEEK     0x05
+#define RTC_REGISTER_YEAR     0x06
   
-/***************************************************************************************************
- *                                             TYPEDEFS
- ***************************************************************************************************/
-typedef enum
-{
-  PingPongBuf_WRITE_SUCCESS,
-  PingPongBuf_WRITE_SWITCH, // write successfully and switch ping pong buff
-  PingPongBuf_WRITE_FAIL,
-  PingPongBuf_READ_SUCCESS,
-  PingPongBuf_READ_FAIL
-} BufOpStatus_t;
-
-typedef struct
-{
-  uint8  active_buf_flag; // only last bit is valid
-  uint16 write_count;     // 已经写入到buff的数据量
-  uint16 buf_size;        // buff的大小，用户定义
-  uint32 *pBuf_ping;
-  uint32 *pBuf_pong;
-} PingPongBuf_t;
-
-
-/* for send to SD size --- 128 uint32 = 512Byte 采64次*1/80 = 0.8s*/
-#define BUFFER_WRITE_SIZE       128
 /**************************************************************************************************
  *                                             FUNCTIONS - API
  **************************************************************************************************/
 
 /*
- * Initialize PingPong buff.
+ * Initialize RTC Service.
  */
-extern PingPongBuf_t *PingPongBufInit(uint16 pingPongBufSize);
+extern void HalRTCInit(void);
 
 /*
- * Reset PingPong buff.Just reset active_buf_flag and write_count
- * not free the mem
+ * Set or Get DS1302 one register
  */
-extern void PingPongBufReset(PingPongBuf_t *pingPongBuf);
+extern void HalRTCGetOrSet(uint8 getOrSetFlag,uint8 registerName,uint8 *value);
+
 
 /*
- * Write one data into the active buffer.
+ * Set or Get DS1302 all register
  */
-extern BufOpStatus_t PingPongBufWrite(PingPongBuf_t *pingPongBuf,uint32 writeData);
+extern void HalRTCGetOrSetFull(uint8 getOrSetFlag, RTCStruct_t *RTCStruct);
 
 /*
- * Read all data from inactive buffer.
+ * RTCstruct init
+ * 输入参数为十进制
  */
-extern BufOpStatus_t PingPongBufRead(PingPongBuf_t *pingPongBuf,
-                                     uint32 **dataBuf);
-
-/*
- * Free PingPong buff memory.
- */
-extern void PingPongBufFree(PingPongBuf_t *pingPongBuf);
-
+extern void HalRTCStructInit(RTCStruct_t *RTCStruct,uint8 sec,uint8 min,uint8 hour,uint8 date,
+                             uint8 month,uint8 week,uint8 year);
 #ifdef __cplusplus
 }
 #endif  

@@ -246,7 +246,7 @@ void SD_SPI_SpeedLow(void)
  */
 void SD_SPI_SpeedHigh(void)
 {
- 	SPI1_SetSpeed_High();//设置到高速模式	
+  SPI1_SetSpeed_High();//设置到高速模式	
 }
 ////////////////////////////////////内部调用函数区///////////////////////////////////
 /*
@@ -264,11 +264,11 @@ uint8 SD_SendBlock(uint8*buf,uint8 cmd)
 	SD_SPI_ReadWriteByte(cmd);
 	if(cmd!=0XFD)//不是结束指令
 	{
-		for(t=0;t<512;t++)SPI1_ReadWriteByte(buf[t]);//提高速度,减少函数传参时间
-	    SD_SPI_ReadWriteByte(DUMMY_DATA);//忽略crc
-	    SD_SPI_ReadWriteByte(DUMMY_DATA);
-		t=SD_SPI_ReadWriteByte(DUMMY_DATA);//接收响应
-		if((t&0x1F)!=0x05)return 2;//响应错误									  					    
+          for(t=0;t<512;t++)SPI1_ReadWriteByte(buf[t]);//提高速度,减少函数传参时间
+	  SD_SPI_ReadWriteByte(DUMMY_DATA);//忽略crc
+	  SD_SPI_ReadWriteByte(DUMMY_DATA);
+          t=SD_SPI_ReadWriteByte(DUMMY_DATA);//接收响应
+          if((t&0x1F)!=0x05)return 2;//响应错误									  					    
 	}						 									  					    
     return 0;//写入成功
 }
@@ -378,8 +378,8 @@ void SD_SPI_Init(void)
   SPI1_Config_Init();	//SPI模块初始化
   
   // 初始化CS端口
-  P3SEL &= ~(1 << 2);    // 普通端口功能
-  P3DIR |= (1 << 2);     // 输出
+  P3SEL &= ~BIT2;    // 普通端口功能
+  P3DIR |= BIT2;     // 输出
   
   SD_CS_H;		//拉高CS释放SPI总线
 }

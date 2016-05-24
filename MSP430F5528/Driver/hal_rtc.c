@@ -1,9 +1,9 @@
 /**************************************************************************************************
-  Filename:       hal_spi_user.c
-  Revised:        $Date: 2016-04-14 17:21:16 +0800 (Thus, 14 Apr 2016) $
+  Filename:       hal_rtc.c
+  Revised:        $Date: 2016-04-07 15:20:16 +0800 (Tues, 7 Apr 2016) $
   Revision:       $Revision: 1 $
 
-  Description:    This file contains the interface to Spi Service.
+  Description:    This file contains the interface to the RTC Service.
 
 
   Copyright 2016 Bupt. All rights reserved.
@@ -34,29 +34,22 @@
   (INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
 
   Should you have any questions regarding your right to use this Software,
-  contact kylinnevercry@gami.com. 
-  SPI 使用UCA0
+  contact kylinnevercry@gami.com.
+  使用MSP430本身的RTC
 **************************************************************************************************/
 
 /***************************************************************************************************
  *                                             INCLUDES
  ***************************************************************************************************/
-#include "hal_spi_user.h"
-#include "msp430f5528.h"
+#include "hal_rtc.h"
+
 /***************************************************************************************************
  *                                             CONSTANTS
  ***************************************************************************************************/
 
-
 /***************************************************************************************************
  *                                              TYPEDEFS
  ***************************************************************************************************/
-
-  
-/***************************************************************************************************
- *                                              MACROS
- ***************************************************************************************************/
-
 
 /**************************************************************************************************
  *                                        INNER GLOBAL VARIABLES
@@ -65,96 +58,149 @@
 /**************************************************************************************************
  *                                        FUNCTIONS - Local
  **************************************************************************************************/
-
+  
+/***************************************************************************************************
+ *                                              MACROS
+ ***************************************************************************************************/
+  
 /**************************************************************************************************
  *                                        FUNCTIONS - API
  **************************************************************************************************/
 
 /**************************************************************************************************
- * @fn      SPI1_Config_Init
+ * @fn      HalRTCInit
  *
- * @brief   Initialize SPI
+ * @brief   Initialize RTC Service
  *
  * @param   none
  *
  * @return  None
  **************************************************************************************************/
-void SPI1_Config_Init(void)
+void HalRTCInit(void)
 {
-  P3SEL |= BIT3 + BIT4; // P3.3 P3.4 设置成复用功能
-  P3DIR |= BIT3;        // P3.3 设置为输出 SIMO
-  P3DIR &= ~BIT4;       // P3.4 设置成输入 SOMI
+  RTCCTL01 = RTCHOLD + RTCMODE; // RTCmode,hexadecimal mode,RTC Source Select RT1PS
   
-  P2SEL |= BIT7;        // P2.7 设置成复用功能
-  P2DIR |= BIT7;        // P2.7 设置成输出
   
-    
-  UCA0CTL1 |= UCSWRST;               		// Enable SW reset
-  UCA0CTL0 |= UCMSB+UCMST+UCSYNC;	        // [b0]   1 -  Synchronous mode 这一位就是用来选择是UART(set 0) 还是 SPI模式(set 1)的
-                                                // [b2-1] 00-  3-pin SPI
-                                                // [b3]   1 -  Master mode
-                                                // [b4]   0 - 8-bit data
-                                                // [b5]   1 - MSB first
-                                                // [b6]   0 - Clock polarity low
-                                                // [b7]   0 - Clock phase - Data is changed on the first UCLK edge and captured on the following edge.
+  /* Setting DS1302 default time */
+  /* 2016-4-26 00:00:00 周二 */
+  RTCStruct_t RTCStruct;
+  HalRTCStructInit(&RTCStruct,0,0,0,1,5,2,16);
+  HalRTCGetOrSetFull(RTC_DS1302_SET,&RTCStruct);
   
-  UCA0CTL1 |= UCSSEL_2;               	// select SMCLK as clock source 16Mhz
-  UCA0CTL1 &= ~UCSWRST;                 // Clear SW reset, resume operation
+  /* Setting RTC clock */
+  RTCPS1CTL |= RT0PSDIV_7;
+  /* Start RTC work */
+  RTCCTL01 &= ~RTCHOLD;
 }
-
+  
 
 /**************************************************************************************************
- * @fn      SD_SPI_ReadWriteByte
+ * @fn      HalRTCGetOrSetFull
  *
- * @brief   Write a Byte
+ * @brief   Set or Get RTC ALL register data.
  *
- * @param   Write Byte
- *
- * @return  Read Byte
+ * @param   GetOrSetFlag -- RTC_DS1302_GET、RTC_DS1302_SET
+ *          RTCStructTemp -- store the calendar to set or store the calendar get from DS1302.
+ * @return  
  **************************************************************************************************/
-uint8 SPI1_ReadWriteByte(uint8 TxData)
-{
-  uint8 RxData;
+void HalRTCGetOrSetFull(uint8 getOrSetFlag, RTCStruct_t *RTCStruct)
+{ 
+  if(getOrSetFlag == RTC_DS1302_SET) // Write data
+  {
+    RTCCTL01 |= RTCHOLD;
+    RTCSEC = RTCStruct->sec;
+    RTCMIN = RTCStruct->min;
+    RTCHOUR = RTCStruct->hour;
+    RTCDOW = (RTCStruct->week - 1);
+    RTCDAY = RTCStruct->date;
+    RTCMON = RTCStruct->month;
+    RTCYEAR = RTCStruct->year;
+    RTCCTL01 &= ~RTCHOLD;
+  }
+  else if(getOrSetFlag == RTC_DS1302_GET) // Read data
+  {
+    while(!(RTCCTL01 & RTCRDY));
+    // Get useful value and change data
+    RTCStruct->sec = RTCSEC;
+    RTCStruct->min = RTCMIN;
+    RTCStruct->hour = RTCHOUR;
+    RTCStruct->week = RTCDOW + 1;
+    RTCStruct->date = RTCDAY;
+    RTCStruct->month = RTCMON;
+    RTCStruct->year = RTCYEAR;
+  }
+  else
+  {}
   
-  UCA0TXBUF = TxData;
-  while(!(UCA0IFG & UCRXIFG));//等待接收完成
-  RxData = UCA0RXBUF;
+  return;
   
-  return RxData;
 }
 
+/**************************************************************************************************
+ * @fn      HalRTCGetOrSet
+ *
+ * @brief   Set or Get RTC one register data.
+ *
+ * @param   GetOrSetFlag -- RTC_DS1302_GET、RTC_DS1302_SET
+ *          RegisterName -- which register want to operation
+ *          value -- get return value . set return 0xFF.All use decimal.
+ * @return  
+ **************************************************************************************************/
+void HalRTCGetOrSet(uint8 getOrSetFlag,uint8 registerName,uint8 *value)
+{
+  if(getOrSetFlag == RTC_DS1302_SET)  //设置值
+  {
+    RTCCTL01 |= RTCHOLD;
+    switch(registerName)  //Set useful value
+    {
+      case RTC_REGISTER_SEC   : RTCSEC = *value ; break;  //bit:0-6
+      case RTC_REGISTER_MIN   : RTCMIN = *value ; break;  //bit:0-6
+      case RTC_REGISTER_HOUR  : RTCHOUR = *value ; break;  //bit:0-5
+      case RTC_REGISTER_DATE  : RTCDOW = *value ; break;  //bit:0-5
+      case RTC_REGISTER_MONTH : RTCDAY = *value ; break;  //bit:0-4
+      case RTC_REGISTER_WEEK  : RTCMON = (*value - 1) ; break;  //bit:0-2
+      case RTC_REGISTER_YEAR  : RTCYEAR = *value ; break;  //bit:0-7
+    }
+    RTCCTL01 &= ~RTCHOLD;
+  }
+  else if(getOrSetFlag == RTC_DS1302_GET) // 获取值
+  {
+    while(!(RTCCTL01 & RTCRDY));
+    switch(registerName)  //Get useful value
+    {
+      case RTC_REGISTER_SEC   : *value = RTCSEC ; break;  //bit:0-6
+      case RTC_REGISTER_MIN   : *value = RTCMIN ; break;  //bit:0-6
+      case RTC_REGISTER_HOUR  : *value = RTCHOUR ; break;  //bit:0-5
+      case RTC_REGISTER_DATE  : *value = RTCDAY ; break;  //bit:0-5
+      case RTC_REGISTER_MONTH : *value = RTCMON ; break;  //bit:0-4
+      case RTC_REGISTER_WEEK  : *value = (RTCDOW + 1) ; break;  //bit:0-2
+      case RTC_REGISTER_YEAR  : *value = RTCYEAR ; break;  //bit:0-7
+    }    
+  }
+  else
+  {
+  }
+  return;
+}
 
 /**************************************************************************************************
- * @fn      SPI1_SetSpeed_Low
+ * @fn      HalRTCStructInit
  *
- * @brief   set spi baud 115200
+ * @brief   Init RTC struct
  *
  * @param   
  *
  * @return  
  **************************************************************************************************/
-void SPI1_SetSpeed_Low(void)
+void HalRTCStructInit(RTCStruct_t *RTCStruct,uint8 sec,uint8 min,uint8 hour,uint8 date,
+                             uint8 month,uint8 week,uint8 year)
 {
-    UCA0CTL1 |= UCSWRST;               		// Enable SW reset
-    UCA0BR0 = 0x8B;                                // 16MHz/138(8b) = 115200
-    UCA0BR1 = 0;     
-    UCA0CTL1 &= ~UCSWRST;                         // Clear SW reset, resume operation
-}
-
-
-/**************************************************************************************************
- * @fn      SPI1_SetSpeed_High
- *
- * @brief   set spi baud 4M
- *
- * @param   
- *
- * @return  
- **************************************************************************************************/
-void SPI1_SetSpeed_High(void)
-{
-    UCA0CTL1 |= UCSWRST;               		// Enable SW reset
-    UCA0BR0 = 0x01;                                // 16 MHz
-    UCA0BR1 = 0;     
-    UCA0CTL1 &= ~UCSWRST;                         // Clear SW reset, resume operation
+  RTCStruct->sec = sec;
+  RTCStruct->min = min;
+  RTCStruct->hour = hour;
+  RTCStruct->date = date;
+  RTCStruct->month = month;
+  RTCStruct->week = week;
+  RTCStruct->year = year;
+  RTCStruct->WP = 0;
 }

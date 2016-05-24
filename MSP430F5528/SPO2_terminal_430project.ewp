@@ -105,11 +105,11 @@
         </option>
         <option>
           <name>GStackSize2</name>
-          <state>250</state>
+          <state>160</state>
         </option>
         <option>
           <name>GHeapSize2</name>
-          <state>160</state>
+          <state>2200</state>
         </option>
         <option>
           <name>RadioDataModelType</name>
@@ -2277,6 +2277,12 @@
     </file>
     <file>
       <name>$PROJ_DIR$\Driver\hal_battery_monitor.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_rtc.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_rtc.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\Driver\hal_SDcard.c</name>

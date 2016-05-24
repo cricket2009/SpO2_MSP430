@@ -97,8 +97,8 @@ PingPongBuf_t *PingPongBufInit(uint16 pingPongBufSize)
   pingPongBuf->write_count = 0;
   pingPongBuf->buf_size = pingPongBufSize;
   
-  pingPongBuf->pBuf_ping = (uint32 *)malloc(pingPongBufSize * sizeof(uint16));
-  pingPongBuf->pBuf_pong = (uint32 *)malloc(pingPongBufSize * sizeof(uint16));
+  pingPongBuf->pBuf_ping = (uint32 *)malloc(pingPongBufSize * sizeof(uint32));
+  pingPongBuf->pBuf_pong = (uint32 *)malloc(pingPongBufSize * sizeof(uint32));
   
   if((pingPongBuf->pBuf_ping == NULL) || (pingPongBuf->pBuf_pong) == NULL)// don't have enough memory
   {
@@ -170,7 +170,7 @@ void PingPongBufFree(PingPongBuf_t *pingPongBuf)
  *
  * @return      BufOpStatus_t
  */
-BufOpStatus_t PingPongBufWrite(PingPongBuf_t *pingPongBuf,uint16 writeData)
+BufOpStatus_t PingPongBufWrite(PingPongBuf_t *pingPongBuf,uint32 writeData)
 {
    BufOpStatus_t OpStatus = PingPongBuf_WRITE_SUCCESS;
   

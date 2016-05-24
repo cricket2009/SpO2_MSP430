@@ -38,6 +38,7 @@
 #include "ff.h"
 #include "hal_uart_cc2530.h"
 #include "PingPongBuf.h"
+#include "hal_rtc.h"
 //==============================================================================
 
 #define SYS_CLK 16000000 //15597800    // 16Mhz
@@ -244,6 +245,9 @@ int Device_waite_time1;
 PingPongBuf_t *pingPongBuf_ForSD;
 uint8 bufferSendToCC2530[68];
 uint8 writeNum;
+uint8 bufferFullFlag  = 0;
+char fileName[30]; // store file name
+char pathname[30]; // read file name
 // 初始化之前就关闭看门狗，不然初始化时间过长，会造成系统不断复位
 int __low_level_init(void)
 {
@@ -260,7 +264,9 @@ int __low_level_init(void)
 void main (void)
 {
     //关闭看门狗 
-    WDTCTL = WDTPW + WDTHOLD;                                   //Stop watchdog timer
+    WDTCTL = WDTPW + WDTHOLD;
+    uint32 *dataTemp;
+    //Stop watchdog timer
     //系统初始化
     SpO2SystemStatus = SpO2_OFFLINE_IDLE;    //默认普通显示状态
     Init_Ports();                                               //Init ports (do first ports because clocks do change ports)
@@ -275,16 +281,16 @@ void main (void)
     
     // Init UART to CC2530
     UART1_Config_Init();
+        
+    // RTC初始化
+    HalRTCInit();
     
     // SD卡初始化
     while(SD_Initialize());
     exfuns_init();      // 申请文件系统内存
     f_mount(0,fs);      // 挂载文件系统  
     f_mkdir("0:S");     // 创建文件夹
-    
-    //首页面显示
-    OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
-    OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");
+    pingPongBuf_ForSD = NULL;
     
     Show_Wait_Symbol("Off_IDLE");
     OLED_Refresh_Gram();
@@ -292,11 +298,20 @@ void main (void)
     //Init_TimerA1();
     //开启全局总中断
     __enable_interrupt();            //Enable interrupts globally
-    
+
+    //首页面显示
+    OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
+    OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");    
     while (1)
     {
       if(SpO2SystemStatus == SpO2_OFFLINE_IDLE)
       {
+        // 释放空间
+        PingPongBufFree(pingPongBuf_ForSD);
+        pingPongBuf_ForSD = NULL;
+        bufferFullFlag  = 0;
+        // 关闭文件
+//      f_close(file);
         //打开显示器
         OLED_SLEEP(0);     
         if(Device_waite_time1 <5000)
@@ -309,6 +324,12 @@ void main (void)
       }
       else if(SpO2SystemStatus == SpO2_ONLINE_IDLE)
       {
+        // 释放空间
+        PingPongBufFree(pingPongBuf_ForSD);
+        pingPongBuf_ForSD = NULL;
+        bufferFullFlag  = 0;
+        // 关闭文件
+//        f_close(file);
         //打开显示器
         OLED_SLEEP(0);     
         if(Device_waite_time1 <5000)
@@ -321,6 +342,13 @@ void main (void)
       }
       else if(SpO2SystemStatus == SpO2_OFF_SLEEP || SpO2SystemStatus == SpO2_ON_SLEEP)    //进入离线睡眠状态
       {
+        // 释放空间
+        PingPongBufFree(pingPongBuf_ForSD);
+        pingPongBuf_ForSD = NULL;
+        bufferFullFlag  = 0;
+        // 关闭文件
+//        f_close(file);
+        
         //关闭显示器
         OLED_SLEEP(1);
         //关闭AFE4400
@@ -331,7 +359,13 @@ void main (void)
         _BIS_SR(LPM3_bits + GIE);
       }
       else if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE || SpO2SystemStatus == SpO2_ONLINE_MEASURE)  //在线或离线测量状态
-      {      
+      { 
+        if(bufferFullFlag  == 1) // 写入SD卡
+        {
+          PingPongBufRead(pingPongBuf_ForSD,&dataTemp);
+//        f_write(file,buff,512,&bw);
+          bufferFullFlag  = 0;
+        }
         if (readDataFlag)        // 采用频率80Hz，每秒readDataFlag有80次等于1
         {
           readDataFlag = 0;
@@ -639,10 +673,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
               //关闭AFE4400
               AFE44xx_PowerOff();
               OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标 
-              // 释放空间
-              
-              // 关闭文件
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
             }
             if(SpO2SystemStatus == SpO2_OFF_SLEEP || SpO2SystemStatus == SpO2_ON_SLEEP) // 如果是睡眠
             {
@@ -730,6 +761,7 @@ __interrupt void Port_2(void)
     break;
   }
 }
+
 // Port 1 按键中断服务函数 ,P1.6
 #pragma vector=PORT1_VECTOR  //DRDY interrupt
 __interrupt void Port_1(void)
@@ -781,6 +813,11 @@ __interrupt void Port_1(void)
             if(Press_type == 0)//短按，开始测量
             {      
               SpO2SystemStatus = SpO2_OFFLINE_MEASURE;
+              // 申请空间
+              pingPongBuf_ForSD = PingPongBufInit(BUFFER_WRITE_SIZE);
+              // 打开文件
+//              GenericApp_GetWriteName(fileName);
+//              f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
               OLED_ShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
               OLED_Refresh_Gram();
               //打开AFE4400
@@ -791,7 +828,7 @@ __interrupt void Port_1(void)
               //TA1CCTL0 |= CCIE;
             }
             else//长按，关屏
-              SpO2SystemStatus = SpO2_OFF_SLEEP; 
+              SpO2SystemStatus = SpO2_OFF_SLEEP;
             break;
           
           case SpO2_ONLINE_IDLE: // 处于在线等待状态
@@ -918,22 +955,50 @@ void UART_send(unsigned char* byt_string, int length)
   }
 }
 
-uint8 aa = 0;
+uint32 aa = 0x30303030;
+uint8 bb = 0;
 void Cal_spo2_and_HR(void)
 {
+    BufOpStatus_t OpStatus;
     AFE44xx_SPO2_Data_buf[0] = AFE44xx_Reg_Read(46);  //read RED - Ambient Data
     AFE44xx_SPO2_Data_buf[1] = AFE44xx_Reg_Read(47);  //read IR - Ambient Data
     
     if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 处于在线测量发送数据
     {
-      //SendRedAndIRToCC2530(AFE44xx_SPO2_Data_buf[0],AFE44xx_SPO2_Data_buf[1],spo2,HR);
-      SendRedAndIRToCC2530(aa,aa,aa,aa);
-      ++aa;
-      if(aa == 8)
-        aa = 0;
+      SendRedAndIRToCC2530(AFE44xx_SPO2_Data_buf[0],AFE44xx_SPO2_Data_buf[1],spo2,HR);
+//      SendRedAndIRToCC2530(aa,aa,75,75);
+//      ++aa;
+//      if(aa == 8)
+//        aa = 0;
     }
-    else // 处于离线测量状态
+    else // 处于离线测量状态 写64次满大概0.8s
     {
+//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 先写RED
+//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 再写IR
+      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 先写RED
+      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 再写IR
+      //根据情况执行不同的事件
+      if (OpStatus == PingPongBuf_WRITE_SWITCH) // Success and switch buff
+      {
+        bufferFullFlag = 1;
+        if(bb == 0)
+        {
+          aa = 0x3131313131;
+          bb = 1;
+        }
+        else
+        {
+          bb = 0;
+          aa = 0x30303030;
+        }
+      }
+      else if(OpStatus == PingPongBuf_WRITE_FAIL )// fail
+      {
+        PingPongBufReset(pingPongBuf_ForSD);
+      }
+      else  //Success
+      { //do nothing
+      }      
     }
     
     if (AFE44xx_SPO2_Data_buf[0] > 2000000 ||AFE44xx_SPO2_Data_buf[1] > 2000000 )//判断Finger OUt状态
@@ -1115,3 +1180,54 @@ void SendRedAndIRToCC2530(uint32 REDdata,uint32 IRdata,uint16 SpO2_temp,uint16 H
     writeNum = 0;
   }
 }
+
+
+/*********************************************************************
+ * @fn      GenericApp_GetWriteName
+ *
+ * @brief   Get the RTC time and make file name.
+ *
+ * @param   char *
+ *          0:D/20xx-xx-xx xx-xx-xx x.txt + \0 = 30Byte
+ *
+ * @return  
+ *
+ */
+void GenericApp_GetWriteName(void)
+{
+  RTCStruct_t RTCStruct;
+  HalRTCGetOrSetFull(RTC_DS1302_GET,&RTCStruct);
+
+  // Make file name
+  fileName[0] = '0';
+  fileName[1] = ':';
+  fileName[2] = 'S';
+  fileName[3] = '/';
+  fileName[4] = '2';
+  fileName[5] = '0';
+  fileName[6] = RTCStruct.year/10 + '0';
+  fileName[7] = RTCStruct.year%10 + '0';
+  fileName[8] = '-';
+  fileName[9] = RTCStruct.month/10 + '0';
+  fileName[10] = RTCStruct.month%10 + '0';
+  fileName[11] = '-';
+  fileName[12] = RTCStruct.date/10 + '0';
+  fileName[13] = RTCStruct.date%10 + '0';
+  fileName[14] = ' ';
+  fileName[15] = RTCStruct.hour/10 + '0';
+  fileName[16] = RTCStruct.hour%10 + '0';
+  fileName[17] = '-';
+  fileName[18] = RTCStruct.min/10 + '0';
+  fileName[19] = RTCStruct.min%10 + '0';
+  fileName[20] = '-';
+  fileName[21] = RTCStruct.sec/10 + '0';
+  fileName[22] = RTCStruct.sec%10 + '0';
+  fileName[23] = ' ';  
+  fileName[24] = RTCStruct.week + '0';
+  fileName[25] = '.';
+  fileName[26] = 't';
+  fileName[27] = 'x';
+  fileName[28] = 't';
+  fileName[29] = '\0';
+}
+

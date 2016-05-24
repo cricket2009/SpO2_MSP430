@@ -138,7 +138,7 @@ void delay(unsigned long num);
 
 void Init_MPY(void);
 
-
+void GenericApp_GetWriteName();
 
 
 extern void oledinit(void);
