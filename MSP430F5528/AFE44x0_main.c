@@ -286,10 +286,10 @@ void main (void)
     HalRTCInit();
     
     // SD卡初始化
-    while(SD_Initialize());
-    exfuns_init();      // 申请文件系统内存
-    f_mount(0,fs);      // 挂载文件系统  
-    f_mkdir("0:S");     // 创建文件夹
+//    while(SD_Initialize());
+//    exfuns_init();      // 申请文件系统内存
+//    f_mount(0,fs);      // 挂载文件系统  
+//    f_mkdir("0:S");     // 创建文件夹
     pingPongBuf_ForSD = NULL;
     
     Show_Wait_Symbol("Off_IDLE");
