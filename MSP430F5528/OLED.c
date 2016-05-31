@@ -151,8 +151,8 @@ void OLED_Refresh_Gram_part(UCHAR x1, UCHAR y1, UCHAR x2, UCHAR y2)
   n2 = y2/8;
   
   
-  	   write_oled_command(0x21);    //Setup column start and end address
-	   write_oled_command(x1);	//A[6:0] : Column start address, range : 0-127d, (RESET=0d)
+  	   write_oled_commandand(0x21);    //Setup column start and end address
+	   write_oled_commandmmand(x1);	//A[6:0] : Column start address, range : 0-127d, (RESET=0d)
 	   write_oled_command(x2);    //B[6:0]: Column end address, range : 0-127d, (RESET =127d)
 
 	   write_oled_command(0x22);    //Setup page start and end address
