@@ -110,10 +110,10 @@ extern SpO2SystemStatus_t SpO2SystemStatus;
 #define HR_Show2Num_Start_Y     30
 
 #define SPO2_Symbol_Start_X     8
-#define SPO2_Symbol_Start_Y     12
+#define SPO2_Symbol_Start_Y     16
 
 #define PR_Symbol_Start_X     88
-#define PR_Symbol_Start_Y     12
+#define PR_Symbol_Start_Y     16
 
 #define Heart_Sympol_Start_X    62
 #define Heart_Sympol_Start_Y    0
@@ -141,20 +141,6 @@ void Init_MPY(void);
 void GenericApp_GetWriteName();
 
 
-extern void oledinit(void);
-extern void delay(unsigned long num);
-extern void write_oled_data(unsigned char ucData);
-extern void OLED_Refresh_Gram(void);
-
-extern void OLED_Clear(void);
-extern void OLED_ShowSymbol(UCHAR x,UCHAR y,UCHAR sym,UCHAR mode);
-extern void OLED_ShowChar(UCHAR x,UCHAR y,UCHAR chr,UCHAR size,UCHAR mode);
-extern void OLED_ShowString(UCHAR x,UCHAR y,UCHAR size,const UCHAR *p);
-
-extern void OLED_ShowNum(UCHAR x,UCHAR y,int num,UCHAR len,UCHAR size);
-extern void OLED_SLEEP(UCHAR st);
-extern void OLED_ShowWaitSymbol(UCHAR x,UCHAR y,UCHAR mode);
-extern void OLED_ShowHeartSymbol(UCHAR x,UCHAR y,UCHAR mode,UCHAR HeartType);
 
 #endif /*AFE44x0_MAIN_H_*/
 

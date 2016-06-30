@@ -1975,6 +1975,12 @@
       <name>$PROJ_DIR$\Driver\hal_battery_monitor.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\Driver\hal_oled.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\hal_oled.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\Driver\hal_rtc.c</name>
     </file>
     <file>
@@ -2000,6 +2006,9 @@
     </file>
     <file>
       <name>$PROJ_DIR$\Driver\hal_uart_cc2530.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Driver\OLED_FONT.h</name>
     </file>
     <file>
       <name>$PROJ_DIR$\Driver\PingPongBuf.c</name>
@@ -2079,12 +2088,6 @@
   </file>
   <file>
     <name>$PROJ_DIR$\AFE44x0_main.h</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\OLED.c</name>
-  </file>
-  <file>
-    <name>$PROJ_DIR$\OLED_FRONT.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\Power_Mon.c</name>

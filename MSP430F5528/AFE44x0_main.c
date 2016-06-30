@@ -39,6 +39,7 @@
 #include "hal_uart_cc2530.h"
 #include "PingPongBuf.h"
 #include "hal_rtc.h"
+#include "hal_oled.h"
 //==============================================================================
 
 #define SYS_CLK 16000000 //15597800    // 16Mhz
@@ -236,7 +237,7 @@ int Finger_out_num = 0;   //手指离开状态计数器
 
 
 int HR_diff_count = 0; // 对通过AC差分信号计算出的心率值的次数进行计数
-int HR_OLED_flag = 0;  // 初始化后开始更新OLED的HR的标志，若为1则开始更新OLED
+int HR_OLEDflag = 0;  // 初始化后开始更新OLED的HR的标志，若为1则开始更新OLED
 
 //延时计数
 int Device_waite_time1;
@@ -272,10 +273,10 @@ void main (void)
     Init_Ports();                                               //Init ports (do first ports because clocks do change ports)
     SetVCore(3);
     Init_Clock();                                               //Init clocks
+    HalOledInit();               // Initialize OLED
     //Init_MPY();
     AFE44xx_PowerOn_Init();
     AFE44xx_PowerOff();       //关闭测量
-    oledinit();               // Initialize OLED
     Init_KEY_Interrupt();
     HalBattMonInit();   //Initialize Battery monitor
     
@@ -293,10 +294,9 @@ void main (void)
     pingPongBuf_ForSD = NULL;
     
      //首页面显示
-    OLED_ShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
-    OLED_ShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");   
+    HalOledShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
+    HalOledShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");   
     Show_Wait_Symbol("Off_IDLE");
-    OLED_Refresh_Gram();
     delay(500000);  
     //Init_TimerA1();
     //开启全局总中断
@@ -314,7 +314,7 @@ void main (void)
         // 关闭文件
 //      f_close(file);
         //打开显示器
-        OLED_SLEEP(0);     
+        HalOledOnOff(HAL_OLED_MODE_ON);     
         if(Device_waite_time1 <5000)
         {
           delay(3000);
@@ -338,7 +338,7 @@ void main (void)
 //        f_close(file);
         
         //关闭显示器
-        OLED_SLEEP(1);
+        HalOledOnOff(HAL_OLED_MODE_OFF);
         //关闭AFE4400
         AFE44xx_PowerOff();
         //关闭AFE4400的中断
@@ -366,10 +366,9 @@ void main (void)
             {
                if(Finger_out_num == 0)
                {
-                 OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-                 OLED_ShowString(SPO2_Symbol_Start_X,30,16,"Finger Lose");
-                 OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-                 OLED_Refresh_Gram();
+                 HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+                 HalOledShowString(SPO2_Symbol_Start_X,30,16,"Finger Lose");
+                 //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
                 }
                if(Finger_out_num > 5) //5s都没有手指，即5次测量都没有手指,停止测量
                {
@@ -380,7 +379,7 @@ void main (void)
                  //关闭AFE4400
                  AFE44xx_PowerOff();
                  
-                 OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+                 HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
                  if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE)   // 离线测量状态切换到离线空闲
                  {
                    SpO2SystemStatus = SpO2_OFFLINE_IDLE;
@@ -391,8 +390,6 @@ void main (void)
                    SpO2SystemStatus = SpO2_ONLINE_IDLE;
                    Show_Wait_Symbol("On-IDLE ");
                  }
-                 
-                 OLED_Refresh_Gram();
                  continue;
                }
               /*显示Finger Lose字样*/
@@ -424,42 +421,41 @@ void main (void)
                if(spo2>100)
                  spo2 = 100;
               //清空原有的显示
-              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
               /*显示spo2 与HR值*/
               if(spo2<100)
-                OLED_ShowNum(SPO2_Show2Num_Start_X,SPO2_Show2Num_Start_Y,spo2,2,32);              
+                HalOledShowNum(SPO2_Show2Num_Start_X,SPO2_Show2Num_Start_Y,spo2,2,32);              
               else
-                OLED_ShowNum(SPO2_Show3Num_Start_X,SPO2_Show3Num_Start_Y,spo2,3,32);
+                HalOledShowNum(SPO2_Show3Num_Start_X,SPO2_Show3Num_Start_Y,spo2,3,32);
 
 
 //////////////////////////////////////////////////////////              
-              if(HR_OLED_flag)
+              if(HR_OLEDflag)
               { 
 ////////////////////////////////////////////////////////             
                 if(HR < 100)
-                  OLED_ShowNum(HR_Show2Num_Start_X,HR_Show2Num_Start_Y,HR,2,32);              
+                  HalOledShowNum(HR_Show2Num_Start_X,HR_Show2Num_Start_Y,HR,2,32);              
                 else
-                  OLED_ShowNum(HR_Show3Num_Start_X ,HR_Show3Num_Start_Y,HR,3,32);
+                  HalOledShowNum(HR_Show3Num_Start_X ,HR_Show3Num_Start_Y,HR,3,32);
 /////////////////////////////////////////////////////////
-              }//if(HR_OLED_flag)
+              }//if(HR_//OLEDflag)
               else
               {
-                 OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X,HR_Wait_Symbol_Start_Y,1);
-                 OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+16,HR_Wait_Symbol_Start_Y,1);
-                 OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+32,HR_Wait_Symbol_Start_Y,1);
+                 HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X,HR_Wait_Symbol_Start_Y,1);
+                 HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X+16,HR_Wait_Symbol_Start_Y,1);
+                 HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X+32,HR_Wait_Symbol_Start_Y,1);
               }
 ////////////////////////////////////////////////////////
               if(cycle_num_OLED == 0)
               {
-                OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
+                //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
                 cycle_num_OLED = 1;
               }
               else
               {
-                OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //无心
+                //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //无心
                 cycle_num_OLED = 0;                
               }
-              OLED_Refresh_Gram();
               continue;
             }
           }
@@ -491,13 +487,13 @@ void Init_Clock (void)
 
 void Show_Wait_Symbol(const UCHAR *p)
 {
-    OLED_ShowString(SPO2_Symbol_Start_X,0,12,p);
-    OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X,SPO2_Wait_Symbol_Start_Y,1);
-    OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X+16,SPO2_Wait_Symbol_Start_Y,1);
-    OLED_ShowWaitSymbol(SPO2_Wait_Symbol_Start_X+32,SPO2_Wait_Symbol_Start_Y,1);
-    OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X,HR_Wait_Symbol_Start_Y,1);
-    OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+16,HR_Wait_Symbol_Start_Y,1);
-    OLED_ShowWaitSymbol(HR_Wait_Symbol_Start_X+32,HR_Wait_Symbol_Start_Y,1);
+    HalOledShowString(SPO2_Symbol_Start_X,0,12,p);
+    HalOledShowWaitSymbol(SPO2_Wait_Symbol_Start_X,SPO2_Wait_Symbol_Start_Y,1);
+    HalOledShowWaitSymbol(SPO2_Wait_Symbol_Start_X+16,SPO2_Wait_Symbol_Start_Y,1);
+    HalOledShowWaitSymbol(SPO2_Wait_Symbol_Start_X+32,SPO2_Wait_Symbol_Start_Y,1);
+    HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X,HR_Wait_Symbol_Start_Y,1);
+    HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X+16,HR_Wait_Symbol_Start_Y,1);
+    HalOledShowWaitSymbol(HR_Wait_Symbol_Start_X+32,HR_Wait_Symbol_Start_Y,1);
     
     // 显示电量
     HalShowBattVol(BATTERY_MEASURE_SHOW);
@@ -558,14 +554,14 @@ __interrupt void TIMER1_A0_ISR (void)
     xxxx = 0;
     if(HR_update == 1)
     {
-      OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
-      OLED_Refresh_Gram();       
+      //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
+      //OLEDRefresh_Gram();       
       HR_update = 0;
     }
     else if(!Finger_out)
     {
-      OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空
-      OLED_Refresh_Gram();    
+      //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空
+      //OLEDRefresh_Gram();    
     }
     
   }
@@ -609,12 +605,10 @@ __interrupt void UART1_CC2530RX_ISR(void)
                 LPM3_EXIT; // 退出低功耗
               
               SpO2SystemStatus = SpO2_ONLINE_MEASURE;
-              //打开定时器中断
-              //TA1CCTL0 |= CCIE;
-              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
-              OLED_Refresh_Gram();
+              
+              HalOledShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
               //打开显示器
-              OLED_SLEEP(0);
+              HalOledOnOff(HAL_OLED_MODE_ON);
               // 初始化写入次数
               writeNum = 0;
               //打开AFE4400
@@ -629,16 +623,13 @@ __interrupt void UART1_CC2530RX_ISR(void)
             if(SpO2SystemStatus == SpO2_ONLINE_MEASURE)
             {
                SpO2SystemStatus = SpO2_ONLINE_IDLE;
-              //关闭定时器中断
-              // TA1CCTL0 &= ~CCIE;
               //关闭AFE4400的中断
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
-              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-              OLED_Refresh_Gram();             
+              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标       
             }
             break;
             
@@ -658,19 +649,17 @@ __interrupt void UART1_CC2530RX_ISR(void)
             {
                LPM3_EXIT;
                //打开显示器
-               OLED_SLEEP(0);
+               HalOledOnOff(HAL_OLED_MODE_ON);
             }
             SpO2SystemStatus = SpO2_FIND_NETWORK;
-            OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
-            OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标   
+            HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+            //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标   
             Show_Wait_Symbol("FIND_NWK");
-            OLED_Refresh_Gram(); 
             break;
             
           case END_DEVICE:  // 找到网络消息 只可能从FIND_NWK到这个状态
             SpO2SystemStatus = SpO2_ONLINE_IDLE;
             Show_Wait_Symbol("On_IDLE ");
-            OLED_Refresh_Gram(); 
             break;
              
           case CLOSEING:   // 正在关闭网络消息
@@ -680,24 +669,22 @@ __interrupt void UART1_CC2530RX_ISR(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标             
+              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标             
             }
             // 在线空闲状态或寻找网络状态下下关闭网络
             if(SpO2SystemStatus == SpO2_ON_SLEEP) // 睡眠状态下关闭网络
             {
-              OLED_SLEEP(0);
+              HalOledOnOff(HAL_OLED_MODE_ON);
               LPM3_EXIT;    
             }
             SpO2SystemStatus = SpO2_CLOSING;
-            OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+            HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
             Show_Wait_Symbol("CLOSING ");
-            OLED_Refresh_Gram(); 
             break;
             
           case CLOSE_NWK:
               SpO2SystemStatus = SpO2_OFFLINE_IDLE;
               Show_Wait_Symbol("Off_IDLE");
-              OLED_Refresh_Gram(); 
             break;
           default:break;
 
@@ -776,8 +763,8 @@ __interrupt void Port_1(void)
               // 打开文件
 //              GenericApp_GetWriteName(fileName);
 //              f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
-              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
-              OLED_Refresh_Gram();
+              //OLEDShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
+              //OLEDRefresh_Gram();
               //打开AFE4400
               AFE44xx_PowerOn();
               //打开AFE4400的中断
@@ -793,8 +780,8 @@ __interrupt void Port_1(void)
             if(Press_type == 0)//短按，开始测量
             {          
               SpO2SystemStatus = SpO2_ONLINE_MEASURE;
-              OLED_ShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
-              OLED_Refresh_Gram();
+              //OLEDShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
+              //OLEDRefresh_Gram();
               //打开AFE4400
               AFE44xx_PowerOn();
               //打开AFE4400的中断
@@ -816,10 +803,10 @@ __interrupt void Port_1(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              //OLEDShowString(0,30,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("Off_IDLE");
-              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-              OLED_Refresh_Gram();
+              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              //OLEDRefresh_Gram();
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_OFF_SLEEP;
@@ -835,10 +822,10 @@ __interrupt void Port_1(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              OLED_ShowString(0,30,32,"        ");  //8个空格，完全清空
+              //OLEDShowString(0,30,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
-              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-              OLED_Refresh_Gram();
+              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              //OLEDRefresh_Gram();
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_ON_SLEEP;
@@ -1085,7 +1072,7 @@ void Cal_spo2_and_HR(void)
              }
              else if(HR_diff_count == HR_BUF_L)  //若HR_diff_count等于HR_BUF_L则开始更新OLED屏HR
              {
-               HR_OLED_flag = 1;
+               HR_OLEDflag = 1;
              }
 ////////////////////////////////////////////////////////////////////////////////             
            }
@@ -1183,5 +1170,12 @@ void GenericApp_GetWriteName(void)
   fileName[27] = 'x';
   fileName[28] = 't';
   fileName[29] = '\0';
+}
+
+
+void delay(unsigned long num)
+{
+  unsigned long i;
+  for(i=0;i<num;i++){ _NOP();}
 }
 
