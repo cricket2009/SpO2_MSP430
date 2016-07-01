@@ -284,15 +284,16 @@ void main (void)
         
     // RTC初始化
     HalRTCInit();
-    
+    // Initialize OLED
+    HalOledInit();               
     // SD卡初始化
     while(SD_Initialize());
-//    exfuns_init();      // 申请文件系统内存
-//    f_mount(0,fs);      // 挂载文件系统  
-//    f_mkdir("0:S");     // 创建文件夹
+    exfuns_init();      // 申请文件系统内存
+    f_mount(0,fs);      // 挂载文件系统  
+    f_mkdir("0:S");     // 创建文件夹
     pingPongBuf_ForSD = NULL;
     
-    HalOledInit();               // Initialize OLED
+
      //首页面显示
     HalOledShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     HalOledShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");   
@@ -312,7 +313,7 @@ void main (void)
         pingPongBuf_ForSD = NULL;
         bufferFullFlag  = 0;
         // 关闭文件
-//      f_close(file);
+        f_close(file);
         //打开显示器
         HalOledOnOff(HAL_OLED_MODE_ON);     
         if(Device_waite_time1 <5000)
@@ -335,7 +336,7 @@ void main (void)
         pingPongBuf_ForSD = NULL;
         bufferFullFlag  = 0;
         // 关闭文件
-//        f_close(file);
+        f_close(file);
         
         //关闭显示器
         HalOledOnOff(HAL_OLED_MODE_OFF);
@@ -351,7 +352,7 @@ void main (void)
         if(bufferFullFlag  == 1) // 写入SD卡
         {
           PingPongBufRead(pingPongBuf_ForSD,&dataTemp);
-//        f_write(file,buff,512,&bw);
+          f_write(file,dataTemp,512,&bw);
           bufferFullFlag  = 0;
         }
         if (readDataFlag)        // 采用频率80Hz，每秒readDataFlag有80次等于1
@@ -372,8 +373,6 @@ void main (void)
                 }
                if(Finger_out_num > 5) //5s都没有手指，即5次测量都没有手指,停止测量
                {
-                 //关闭定时器中断
-                 //TA1CCTL0 &= ~CCIE;
                  //关闭AFE4400的中断
                  Disable_AFE44xx_DRDY_Interrupt();
                  //关闭AFE4400
@@ -526,48 +525,6 @@ void Init_Ports (void)
     #endif
 }
 
-
-
-/*  
- * ======== Init_TimerA1 ========
- */
-void Init_TimerA1 (void)
-{
-    TA1CCR0 = 50000;
-    TA1CTL |= TASSEL_1 + MC_1 + TACLR; //ACLK--16Mhz, clear TAR
-}
-
-
-
-/*  
- * ======== TIMER1_A0_ISR ========
- */
-int xxxx = 0;
-#pragma vector=TIMER1_A0_VECTOR
-__interrupt void TIMER1_A0_ISR (void)
-{
-  TA1CCTL0 &= ~CCIE;                  //CCR0 interrupt disable
-  if(xxxx < 1)
-    xxxx++;
-  else
-  {
-    xxxx = 0;
-    if(HR_update == 1)
-    {
-      //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
-      //OLEDRefresh_Gram();       
-      HR_update = 0;
-    }
-    else if(!Finger_out)
-    {
-      //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空
-      //OLEDRefresh_Gram();    
-    }
-    
-  }
-  TA1CCTL0 |= CCIE;                 //CCR0 interrupt enable
-  
-}
 
 // UART1--CC2530 接收中断函数
 #pragma vector=USCI_A1_VECTOR
@@ -761,16 +718,13 @@ __interrupt void Port_1(void)
               // 申请空间
               pingPongBuf_ForSD = PingPongBufInit(BUFFER_WRITE_SIZE);
               // 打开文件
-//              GenericApp_GetWriteName(fileName);
-//              f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
+              GenericApp_GetWriteName(fileName);
+              f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
               HalOledShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
-              //OLEDRefresh_Gram();
               //打开AFE4400
               AFE44xx_PowerOn();
               //打开AFE4400的中断
               Enable_AFE44xx_DRDY_Interrupt();
-              //打开定时器中断
-              //TA1CCTL0 |= CCIE;
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_OFF_SLEEP;
@@ -785,8 +739,6 @@ __interrupt void Port_1(void)
               AFE44xx_PowerOn();
               //打开AFE4400的中断
               Enable_AFE44xx_DRDY_Interrupt();
-              //打开定时器中断
-              //TA1CCTL0 |= CCIE;
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_ON_SLEEP;
@@ -796,8 +748,6 @@ __interrupt void Port_1(void)
             if(Press_type == 0)//短按，停止测量
             {
               SpO2SystemStatus = SpO2_OFFLINE_IDLE;
-              //关闭定时器中断
-              // TA1CCTL0 &= ~CCIE;
               //关闭AFE4400的中断
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
@@ -814,8 +764,6 @@ __interrupt void Port_1(void)
             if(Press_type == 0)//短按，停止测量
             {
               SpO2SystemStatus = SpO2_ONLINE_IDLE;
-              //关闭定时器中断
-              // TA1CCTL0 &= ~CCIE;
               //关闭AFE4400的中断
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
@@ -912,7 +860,7 @@ void Cal_spo2_and_HR(void)
     else // 处于离线测量状态 写64次满大概0.8s
     {
 //      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 先写RED
-//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 再写IR
+//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[1]); // 再写IR
       OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 先写RED
       OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 再写IR
       //根据情况执行不同的事件
@@ -1176,3 +1124,78 @@ void delay(unsigned long num)
   for(i=0;i<num;i++){ _NOP();}
 }
 
+/*********************************************************************
+ * @fn      GenericApp_OpenDir
+ *
+ * @brief   找到指定目录下文件
+ *
+ * @param  
+ *
+ * @return  true is over,flase is not over
+ *
+ */
+bool GenericApp_OpenDir(void)
+{
+  uint8 res = 0;
+  DIR *fddir = 0;         // 目录
+  FILINFO *finfo = 0;     // 文件信息
+  uint8 *fn = 0;          // 长文件名
+  
+  // initilize pathname
+  strcpy(pathname,"0:S/");
+  
+  // 申请内存
+  fddir = (DIR *)malloc(sizeof(DIR));
+  finfo = (FILINFO *)malloc(sizeof(FILINFO));
+  if(fddir == NULL || finfo == NULL)
+  {
+    if(fddir != NULL)
+      free(fddir);
+    if(finfo != NULL)
+      free(finfo);
+    return FALSE;
+  }
+  
+  finfo->lfsize = 28 + 1;
+  finfo->lfname = malloc(finfo->lfsize);
+  if(finfo->lfname == NULL)
+  {
+    free(finfo->lfname);
+    free(fddir);
+    free(finfo);
+    return FALSE;
+  }
+  
+  // 打开源目录
+  res = f_opendir(fddir,"0:D");
+
+  if(res == 0)  // 打开目录成功
+  {
+    while(res == 0)
+    {
+      res = f_readdir(fddir,finfo);   //读取目录下的一个文件
+     
+      if(res != FR_OK || finfo->fname[0] == 0) // 出错或者读到了结尾
+      {
+        free(finfo->lfname);
+        free(fddir);
+        free(finfo);
+        return FALSE;
+      }
+      
+      if(finfo->fname[0] == '.') // 忽略上层文件
+        continue;
+      
+      /* 存在文件,保存字符串 */
+      fn = (uint8 *)(*finfo->lfname?finfo->lfname:finfo->fname);
+      strcat((char *)pathname,(char *)fn);
+      
+      break;
+    }
+  }
+  
+  free(finfo->lfname);
+  free(fddir);
+  free(finfo);
+  return TRUE;  
+}

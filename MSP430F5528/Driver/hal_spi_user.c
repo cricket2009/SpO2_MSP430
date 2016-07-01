@@ -90,7 +90,7 @@ void SPI1_Config_Init(void)
   
     
   UCA0CTL1 |= UCSWRST;               		// Enable SW reset
-  UCA0CTL0 |= UCMSB+UCMST+UCSYNC;	        // [b0]   1 -  Synchronous mode 这一位就是用来选择是UART(set 0) 还是 SPI模式(set 1)的
+  UCA0CTL0 |= UCMSB+UCCKPH+UCMST+UCSYNC;	        // [b0]   1 -  Synchronous mode 这一位就是用来选择是UART(set 0) 还是 SPI模式(set 1)的
                                                 // [b2-1] 00-  3-pin SPI
                                                 // [b3]   1 -  Master mode
                                                 // [b4]   0 - 8-bit data

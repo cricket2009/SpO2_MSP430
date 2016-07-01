@@ -140,7 +140,7 @@ void Init_MPY(void);
 
 void GenericApp_GetWriteName();
 
-
+bool GenericApp_OpenDir(void);
 
 #endif /*AFE44x0_MAIN_H_*/
 
