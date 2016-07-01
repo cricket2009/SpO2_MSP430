@@ -101,8 +101,9 @@ extern void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num);
 /*
  * Show wait symbol
  */
-void HalOledShowWaitSymbol(UCHAR x,UCHAR y,UCHAR mode);
+extern void HalOledShowWaitSymbol(UCHAR x,UCHAR y,UCHAR mode);
 
+extern void OLED_ShowHeartSymbol(UCHAR x,UCHAR y,UCHAR mode,UCHAR HeartType);
 #ifdef __cplusplus
 }
 #endif  

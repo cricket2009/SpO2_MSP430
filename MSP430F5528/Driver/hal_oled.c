@@ -684,3 +684,45 @@ void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num)
       }
     }
 }
+
+
+void OLED_ShowHeartSymbol(UCHAR x,UCHAR y,UCHAR mode,UCHAR HeartType)
+{
+    UCHAR temp,t;
+    uint8 x0=x;
+    uint8 y0=y/8;
+    
+    // 设置开始位置
+    Set_xy(x0,y0);
+    // 写入数据
+    I2C_Start();
+    I2C_O(0x78);
+    I2C_Ack();
+    I2C_O(0x40);
+    I2C_Ack();  
+    
+    for(t=0;t<10;++t)
+    {
+      if(HeartType == 1)temp = oled_Small_Heart_point[t];//???
+      else temp = oled_Clear_Heart_point[t];//???
+      I2C_O(temp);
+      I2C_Ack();
+      ++x0;
+      if(x0-x == 10)  // 该行写完
+      {
+        I2C_Stop();
+        x0 = x;
+        if(t != 9)
+        {
+          ++y0;
+          // 设置开始位置
+          Set_xy(x0,y0);
+          I2C_Start();
+          I2C_O(0x78);
+          I2C_Ack();
+          I2C_O(0x40);
+          I2C_Ack();            
+        }
+      }
+    }
+}

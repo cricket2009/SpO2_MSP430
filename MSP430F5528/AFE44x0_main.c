@@ -369,7 +369,7 @@ void main (void)
                {
                  HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
                  HalOledShowString(SPO2_Symbol_Start_X,40,16,"Finger Lose");
-                 //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+                 OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
                 }
                if(Finger_out_num > 5) //5s都没有手指，即5次测量都没有手指,停止测量
                {
@@ -447,12 +447,12 @@ void main (void)
 ////////////////////////////////////////////////////////
               if(cycle_num_OLED == 0)
               {
-                //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //大心
+                OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,1); //小心
                 cycle_num_OLED = 1;
               }
               else
               {
-                //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //无心
+                OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //无心
                 cycle_num_OLED = 0;                
               }
               continue;
@@ -590,7 +590,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
               AFE44xx_PowerOff();
               HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
-              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标       
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标       
             }
             break;
             
@@ -626,7 +626,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
             }
             SpO2SystemStatus = SpO2_FIND_NETWORK;
             HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
-            //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标   
+            OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标   
             Show_Wait_Symbol("FIND_NWK");
             break;
             
@@ -642,7 +642,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标             
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标             
             }
             // 在线空闲状态或寻找网络状态下下关闭网络
             if(SpO2SystemStatus == SpO2_ON_SLEEP) // 睡眠状态下关闭网络
@@ -770,7 +770,7 @@ __interrupt void Port_1(void)
               AFE44xx_PowerOff();
               HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("Off_IDLE");
-              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_OFF_SLEEP;
@@ -786,7 +786,7 @@ __interrupt void Port_1(void)
               AFE44xx_PowerOff();
               HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
-              //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
+              OLED_ShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_ON_SLEEP;
