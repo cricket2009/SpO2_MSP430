@@ -845,8 +845,6 @@ void UART_send(unsigned char* byt_string, int length)
   }
 }
 
-uint32 aa = 0x30303030;
-uint8 bb = 0;
 void Cal_spo2_and_HR(void)
 {
     BufOpStatus_t OpStatus;
@@ -859,24 +857,12 @@ void Cal_spo2_and_HR(void)
     }
     else // 处于离线测量状态 写64次满大概0.8s
     {
-//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 先写RED
-//      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[1]); // 再写IR
-      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 先写RED
-      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,aa); // 再写IR
+      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[0]); // 先写RED
+      OpStatus = PingPongBufWrite(pingPongBuf_ForSD,AFE44xx_SPO2_Data_buf[1]); // 再写IR
       //根据情况执行不同的事件
       if (OpStatus == PingPongBuf_WRITE_SWITCH) // Success and switch buff
       {
         bufferFullFlag = 1;
-        if(bb == 0)
-        {
-          aa = 0x3131313131;
-          bb = 1;
-        }
-        else
-        {
-          bb = 0;
-          aa = 0x30303030;
-        }
       }
       else if(OpStatus == PingPongBuf_WRITE_FAIL )// fail
       {
