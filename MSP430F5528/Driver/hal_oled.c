@@ -219,9 +219,9 @@ void HalOledShowChar(uint8 x,uint8 y,uint8 chr,uint8 size,uint8 mode)
     I2C_O(0x40);
     I2C_Ack();  
     
-    for(t=0;t<96;++t)
+    for(t=0;t<64;++t)
     {
-      temp = oled_asc3_3216[chr][t]; //调用16X48字体
+      temp = oled_asc3_3216[chr][t]; //调用16X32字体
       I2C_O(temp);
       I2C_Ack();
       ++x0;
@@ -229,7 +229,7 @@ void HalOledShowChar(uint8 x,uint8 y,uint8 chr,uint8 size,uint8 mode)
       {
         I2C_Stop();
         x0 = x;
-        if(t != 95)
+        if(t != 63)
         {
           ++y0;
           // 设置开始位置
@@ -647,23 +647,40 @@ uint32 oled_pow(uint8 m,uint8 n)
  ***************************************************************************************************/
 void HalOledShowPowerSymbol(uint8 x,uint8 y,uint8 mode,uint8 power_num)
 {
-     uint8 temp,t,t1;
-     uint8 y0=y;
-     for(t=0;t<48;t++)
-     {
-       temp = oled_power_symbol[power_num][t]; //oled_power_symbol图标 power_num越小电量越低，10为最大100%,0最小0%
-       for(t1=0;t1<8;t1++)
-       {
-         if(temp&0x80)HalOledDrawPoint(x,y,mode);
-         else HalOledDrawPoint(x,y,!mode);
-         temp<<=1;
-         y++;
-         if((y-y0)==12)
-         {
-           y=y0;
-           x++;
-           break;
-         }
-       }  	
-     } 
+    UCHAR temp,t;
+    uint8 x0=x;
+    uint8 y0=y/8;
+    
+    // 设置开始位置
+    Set_xy(x0,y0);
+    // 写入数据
+    I2C_Start();
+    I2C_O(0x78);
+    I2C_Ack();
+    I2C_O(0x40);
+    I2C_Ack();  
+    
+    for(t=0;t<48;++t)
+    {
+      temp = oled_power_symbol[power_num][t]; //oled_power_symbol图标 power_num越小电量越低，10为最大100%,0最小0%
+      I2C_O(temp);
+      I2C_Ack();
+      ++x0;
+      if(x0-x == 24)  // 该行写完
+      {
+        I2C_Stop();
+        x0 = x;
+        if(t != 47)
+        {
+          ++y0;
+          // 设置开始位置
+          Set_xy(x0,y0);
+          I2C_Start();
+          I2C_O(0x78);
+          I2C_Ack();
+          I2C_O(0x40);
+          I2C_Ack();            
+        }
+      }
+    }
 }

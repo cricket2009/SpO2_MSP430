@@ -92,22 +92,22 @@ typedef enum
 extern SpO2SystemStatus_t SpO2SystemStatus;
 
 #define SPO2_Wait_Symbol_Start_X 11
-#define SPO2_Wait_Symbol_Start_Y 40
+#define SPO2_Wait_Symbol_Start_Y 45
 
 #define HR_Wait_Symbol_Start_X   76
-#define HR_Wait_Symbol_Start_Y   40
+#define HR_Wait_Symbol_Start_Y   45
 
 #define SPO2_Show3Num_Start_X   11
-#define SPO2_Show3Num_Start_Y   30
+#define SPO2_Show3Num_Start_Y   32
 
 #define HR_Show3Num_Start_X     76   
-#define HR_Show3Num_Start_Y     30
+#define HR_Show3Num_Start_Y     32
 
 #define SPO2_Show2Num_Start_X   17
-#define SPO2_Show2Num_Start_Y   30
+#define SPO2_Show2Num_Start_Y   32
 
 #define HR_Show2Num_Start_X     83   
-#define HR_Show2Num_Start_Y     30
+#define HR_Show2Num_Start_Y     32
 
 #define SPO2_Symbol_Start_X     8
 #define SPO2_Symbol_Start_Y     16

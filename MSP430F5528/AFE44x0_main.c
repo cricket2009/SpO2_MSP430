@@ -273,7 +273,6 @@ void main (void)
     Init_Ports();                                               //Init ports (do first ports because clocks do change ports)
     SetVCore(3);
     Init_Clock();                                               //Init clocks
-    HalOledInit();               // Initialize OLED
     //Init_MPY();
     AFE44xx_PowerOn_Init();
     AFE44xx_PowerOff();       //关闭测量
@@ -287,12 +286,13 @@ void main (void)
     HalRTCInit();
     
     // SD卡初始化
-//    while(SD_Initialize());
+    while(SD_Initialize());
 //    exfuns_init();      // 申请文件系统内存
 //    f_mount(0,fs);      // 挂载文件系统  
 //    f_mkdir("0:S");     // 创建文件夹
     pingPongBuf_ForSD = NULL;
     
+    HalOledInit();               // Initialize OLED
      //首页面显示
     HalOledShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     HalOledShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");   
@@ -366,8 +366,8 @@ void main (void)
             {
                if(Finger_out_num == 0)
                {
-                 HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
-                 HalOledShowString(SPO2_Symbol_Start_X,30,16,"Finger Lose");
+                 HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
+                 HalOledShowString(SPO2_Symbol_Start_X,40,16,"Finger Lose");
                  //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
                 }
                if(Finger_out_num > 5) //5s都没有手指，即5次测量都没有手指,停止测量
@@ -379,7 +379,7 @@ void main (void)
                  //关闭AFE4400
                  AFE44xx_PowerOff();
                  
-                 HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+                 HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
                  if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE)   // 离线测量状态切换到离线空闲
                  {
                    SpO2SystemStatus = SpO2_OFFLINE_IDLE;
@@ -421,7 +421,7 @@ void main (void)
                if(spo2>100)
                  spo2 = 100;
               //清空原有的显示
-              HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               /*显示spo2 与HR值*/
               if(spo2<100)
                 HalOledShowNum(SPO2_Show2Num_Start_X,SPO2_Show2Num_Start_Y,spo2,2,32);              
@@ -627,7 +627,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
               //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标       
             }
@@ -652,7 +652,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
                HalOledOnOff(HAL_OLED_MODE_ON);
             }
             SpO2SystemStatus = SpO2_FIND_NETWORK;
-            HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+            HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
             //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标   
             Show_Wait_Symbol("FIND_NWK");
             break;
@@ -678,7 +678,7 @@ __interrupt void UART1_CC2530RX_ISR(void)
               LPM3_EXIT;    
             }
             SpO2SystemStatus = SpO2_CLOSING;
-            HalOledShowString(0,30,32,"        ");  //8个空格，完全清空
+            HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
             Show_Wait_Symbol("CLOSING ");
             break;
             
@@ -763,7 +763,7 @@ __interrupt void Port_1(void)
               // 打开文件
 //              GenericApp_GetWriteName(fileName);
 //              f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
-              //OLEDShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
+              HalOledShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
               //OLEDRefresh_Gram();
               //打开AFE4400
               AFE44xx_PowerOn();
@@ -780,8 +780,7 @@ __interrupt void Port_1(void)
             if(Press_type == 0)//短按，开始测量
             {          
               SpO2SystemStatus = SpO2_ONLINE_MEASURE;
-              //OLEDShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
-              //OLEDRefresh_Gram();
+              HalOledShowString(SPO2_Symbol_Start_X,0,12,"On_Go   ");
               //打开AFE4400
               AFE44xx_PowerOn();
               //打开AFE4400的中断
@@ -803,10 +802,9 @@ __interrupt void Port_1(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              //OLEDShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("Off_IDLE");
               //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-              //OLEDRefresh_Gram();
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_OFF_SLEEP;
@@ -822,10 +820,9 @@ __interrupt void Port_1(void)
               Disable_AFE44xx_DRDY_Interrupt();          
               //关闭AFE4400
               AFE44xx_PowerOff();
-              //OLEDShowString(0,30,32,"        ");  //8个空格，完全清空
+              HalOledShowString(0,32,32,"        ");  //8个空格，完全清空
               Show_Wait_Symbol("On_IDLE ");
               //OLEDShowHeartSymbol(Heart_Sympol_Start_X,Heart_Sympol_Start_Y,1,0); //清空心型图标
-              //OLEDRefresh_Gram();
             }
             else//长按，关屏
               SpO2SystemStatus = SpO2_ON_SLEEP;
