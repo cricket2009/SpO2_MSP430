@@ -87,6 +87,7 @@ typedef enum
   SpO2_CLOSING,                 // ¹Ø±ÕÍøÂç×´Ì¬
   SpO2_ON_SLEEP,                // ÔÚÏßË¯Ãß×´Ì¬
   SpO2_OFF_SLEEP,               // ÀëÏßË¯Ãß×´Ì¬ 
+  SpO2_SYNC                     // Í¬²½×´Ì¬
 } SpO2SystemStatus_t;
 
 extern SpO2SystemStatus_t SpO2SystemStatus;
@@ -103,7 +104,7 @@ extern SpO2SystemStatus_t SpO2SystemStatus;
 #define HR_Show3Num_Start_X     76   
 #define HR_Show3Num_Start_Y     32
 
-#define SPO2_Show2Num_Start_X   17
+#define SPO2_Show2Num_Start_X   14
 #define SPO2_Show2Num_Start_Y   32
 
 #define HR_Show2Num_Start_X     83   
@@ -117,6 +118,9 @@ extern SpO2SystemStatus_t SpO2SystemStatus;
 
 #define Heart_Sympol_Start_X    62
 #define Heart_Sympol_Start_Y    0
+
+#define SPO2_WAVEFORM_READ_ONE_TIME              512
+#define SPO2_WAVEFORM_SEND_ONE_TIME              64
 //Function declarations
 void Init_Ports (void);
 void Init_Clock (void);
@@ -141,6 +145,8 @@ void Init_MPY(void);
 void GenericApp_GetWriteName();
 
 bool GenericApp_OpenDir(void);
+
+void SyncData(void);
 
 #endif /*AFE44x0_MAIN_H_*/
 

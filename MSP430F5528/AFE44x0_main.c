@@ -293,7 +293,7 @@ void main (void)
     f_mkdir("0:S");     // 创建文件夹
     pingPongBuf_ForSD = NULL;
     
-
+    GenericApp_OpenDir();
      //首页面显示
     HalOledShowString(SPO2_Symbol_Start_X,SPO2_Symbol_Start_Y,16,"SpO2%");
     HalOledShowString(PR_Symbol_Start_X,PR_Symbol_Start_Y,16,"PR");   
@@ -460,6 +460,10 @@ void main (void)
           }
         } //if(readDataFlag) 
       }
+      else if(SpO2SystemStatus == SpO2_SYNC) // 处于同步状态
+      {
+        SyncData();
+      }
    }  //while(1)
 } //main()
 
@@ -590,7 +594,19 @@ __interrupt void UART1_CC2530RX_ISR(void)
             }
             break;
             
-          case SYNC_MEASURE: // 同步消息，暂不处理
+          case SYNC_MEASURE: // 同步消息
+            if(SpO2SystemStatus == SpO2_ON_SLEEP || SpO2SystemStatus == SpO2_ONLINE_IDLE) // 在线睡眠状态或在线空闲状态
+            {
+              if(SpO2SystemStatus == SpO2_ON_SLEEP) // 处于睡眠状态先退出低功耗
+                LPM3_EXIT; // 退出低功耗
+              
+              SpO2SystemStatus = SpO2_SYNC;
+              
+              HalOledShowString(SPO2_Symbol_Start_X,0,12,"On_Sync ");
+              //打开显示器
+              HalOledOnOff(HAL_OLED_MODE_ON);
+
+            }            
             break;
             
           case FIND_NWK:  // 正在找网消息
@@ -834,7 +850,6 @@ void Init_UART()
 /*  
  * ======== UART_send  ========
  */
-uint32 a = 0;
 void UART_send(unsigned char* byt_string, int length)
 {
   int ii;
@@ -1153,7 +1168,7 @@ bool GenericApp_OpenDir(void)
   }
   
   // 打开源目录
-  res = f_opendir(fddir,"0:D");
+  res = f_opendir(fddir,"0:S");
 
   if(res == 0)  // 打开目录成功
   {
@@ -1184,4 +1199,77 @@ bool GenericApp_OpenDir(void)
   free(fddir);
   free(finfo);
   return TRUE;  
+}
+
+
+/*********************************************************************
+ * @fn      SyncData
+ *
+ * @brief   Sync data 一次同步一个文件
+ *
+ * @param  
+ *
+ * @return  
+ *
+ */
+void SyncData(void)
+{
+  uint8 *dataSendBuffer;
+  uint8 *dataSendBufferTemp;
+  uint8 i,j;
+  uint16 flagNum;
+  if(GenericApp_OpenDir() == TRUE) // 目录下有文件，发送文件
+  {
+    dataSendBuffer = malloc(sizeof(uint8)*512);
+    dataSendBufferTemp = malloc(sizeof(uint8)*68);
+    if(dataSendBuffer == NULL)
+    {
+      SpO2SystemStatus = SpO2_ONLINE_IDLE; // 同步结束
+      return;
+    }
+    if(dataSendBufferTemp == NULL)
+    {
+      free(dataSendBuffer);
+      SpO2SystemStatus = SpO2_ONLINE_IDLE; // 同步结束
+      return;
+    }
+    f_open(file,(char *)pathname,FA_OPEN_EXISTING | FA_READ); //  打开文件
+    f_read(file,dataSendBuffer,SPO2_WAVEFORM_READ_ONE_TIME,&br);
+    br = br/SPO2_WAVEFORM_SEND_ONE_TIME;
+    j = 0;
+    while(br != 0)
+    {
+      while(br != 0)
+      {
+        flagNum = j*64;
+        for(i = 0; i < 64; ++i)
+        {
+          dataSendBufferTemp[i] = dataSendBuffer[flagNum+i];
+        }
+        dataSendBufferTemp[i++] = 0x62;
+        dataSendBufferTemp[i++] = 0x00;
+        dataSendBufferTemp[i++] = 0x4B;
+        dataSendBufferTemp[i++] = 0x00;
+        UART1_Send_Buffer(dataSendBufferTemp,68);
+        br--;
+        ++j;
+        halMcuWaitUs(50000);
+      }
+      f_read(file,dataSendBuffer,SPO2_WAVEFORM_READ_ONE_TIME,&br);
+      br = br/SPO2_WAVEFORM_SEND_ONE_TIME;
+      j = 0;
+    }
+    
+    // 发送完毕 关闭删除文件
+    f_close(file);
+    f_unlink((char *)pathname);
+    free(dataSendBuffer);
+    free(dataSendBufferTemp);
+  }
+  else // 没有文件了，发送同步结束命令
+  {
+    UART1_Send_Buffer(bufferSendToCC2530,10);   
+    SpO2SystemStatus = SpO2_ONLINE_IDLE; // 同步结束
+    Show_Wait_Symbol("On_IDLE ");
+  }  
 }
