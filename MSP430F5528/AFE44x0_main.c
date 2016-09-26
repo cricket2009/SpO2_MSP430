@@ -382,12 +382,12 @@ void main (void)
                  if(SpO2SystemStatus == SpO2_OFFLINE_MEASURE)   // 离线测量状态切换到离线空闲
                  {
                    SpO2SystemStatus = SpO2_OFFLINE_IDLE;
-                   Show_Wait_Symbol("Off-IDLE");
+                   Show_Wait_Symbol("Off_IDLE");
                  }
                  else if(SpO2SystemStatus == SpO2_ONLINE_MEASURE) // 在线测量状态切换到在线空闲
                  {
                    SpO2SystemStatus = SpO2_ONLINE_IDLE;
-                   Show_Wait_Symbol("On-IDLE ");
+                   Show_Wait_Symbol("On_IDLE ");
                  }
                  continue;
                }
@@ -734,7 +734,7 @@ __interrupt void Port_1(void)
               // 申请空间
               pingPongBuf_ForSD = PingPongBufInit(BUFFER_WRITE_SIZE);
               // 打开文件
-              GenericApp_GetWriteName(fileName);
+              GenericApp_GetWriteName();
               f_open(file,fileName,FA_CREATE_ALWAYS | FA_WRITE);
               HalOledShowString(SPO2_Symbol_Start_X,0,12,"Off_Go  ");
               //打开AFE4400
