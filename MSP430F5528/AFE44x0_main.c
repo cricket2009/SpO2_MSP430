@@ -267,6 +267,7 @@ void main (void)
     //关闭看门狗 
     WDTCTL = WDTPW + WDTHOLD;
     uint32 *dataTemp;
+    uint8 loopNum = 10;
     //Stop watchdog timer
     //系统初始化
     SpO2SystemStatus = SpO2_OFFLINE_IDLE;    //默认普通显示状态
@@ -287,7 +288,9 @@ void main (void)
     // Initialize OLED
     HalOledInit();               
     // SD卡初始化
-    while(SD_Initialize());
+//    while(SD_Initialize());
+    while(loopNum--)
+      SD_Initialize();
     exfuns_init();      // 申请文件系统内存
     f_mount(0,fs);      // 挂载文件系统  
     f_mkdir("0:S");     // 创建文件夹
